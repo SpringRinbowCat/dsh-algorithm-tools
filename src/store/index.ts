@@ -103,6 +103,7 @@ export class IcpcStore {
         if (!this.state.settings.reminder) this.state.settings.reminder = { enabled: false, time: '20:00' }
         if (!this.state.settings.accounts) this.state.settings.accounts = {}
         if (!this.state.trainingIndex) this.state.trainingIndex = {}
+        if (!this.state.bankSyncedAt) this.state.bankSyncedAt = null
       }
     } catch (e) {
       console.warn(`[icpc-store] load failed, starting fresh: ${(e as Error).message}`)
@@ -525,6 +526,15 @@ export class IcpcStore {
 
   getTrainingIndex(date: string): string[] {
     return this.state.trainingIndex[date] ?? []
+  }
+
+  setBankSyncedAt(iso: string): void {
+    this.state.bankSyncedAt = iso
+    this.scheduleSave()
+  }
+
+  getBankSyncedAt(): string | null {
+    return this.state.bankSyncedAt ?? null
   }
 
   getMonthView(month: string): Array<{ date: string; total: number; checked: number }> {

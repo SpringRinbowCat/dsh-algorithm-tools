@@ -118,6 +118,8 @@ export interface StoreState {
   settings: SettingsRecord
   /** 每日训练索引：日期 → 当天「今日训练」抽到的题（`platform:problemKey`），用于判定今日是否完成 */
   trainingIndex: Record<string, string[]>
+  /** 上次题库同步时间（ISO）；每天自动刷一次题库用 */
+  bankSyncedAt: string | null
 }
 
 export function defaultState(): StoreState {
@@ -129,6 +131,7 @@ export function defaultState(): StoreState {
     templateProgress: [],
     customTemplates: [],
     trainingIndex: {},
+    bankSyncedAt: null,
     settings: {
       accounts: {},
       ai: {

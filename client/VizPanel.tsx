@@ -39,7 +39,16 @@ export interface Stats {
   weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number }>
 }
 
-const VIEWS = ['日历', '数据概览'] as const
+export interface ContestItem {
+  id: string
+  name: string
+  startTimeIso: string | null
+  durationMinutes: number
+  phase: string
+  url: string
+}
+
+const VIEWS = ['日历', '数据概览', '赛事'] as const
 
 function levelOf(cell: DayCell): 0 | 1 | 2 | 3 {
   if (cell.done && cell.tasks > 0) return 3
@@ -52,10 +61,11 @@ function levelOf(cell: DayCell): 0 | 1 | 2 | 3 {
 export interface VizPanelProps {
   overview: Overview | null
   stats: Stats | null
+  contests: ContestItem[] | null
   error?: string | null
 }
 
-export function VizPanel({ overview, stats, error = null }: VizPanelProps): ReactNode {
+export function VizPanel({ overview, stats, contests, error = null }: VizPanelProps): ReactNode {
   const [view, setView] = useState(0)
 
   return (
@@ -93,7 +103,39 @@ export function VizPanel({ overview, stats, error = null }: VizPanelProps): Reac
 
       {view === 0 && overview ? <CalendarView data={overview} /> : null}
       {view === 1 && stats ? <StatsView data={stats} /> : null}
+      {view === 2 ? <ContestsView data={contests} /> : null}
     </section>
+  )
+}
+
+function ContestsView({ data }: { data: ContestItem[] | null }): ReactNode {
+  if (!data) return <div className="icpc-viz__loading">加载赛事…</div>
+  if (data.length === 0) return <div className="icpc-viz__muted">近期没有 Codeforces 赛事</div>
+  return (
+    <>
+      <div className="icpc-viz__section">Codeforces 近期赛事</div>
+      <ul className="icpc-viz__contests">
+        {data.map((c) => {
+          const start = c.startTimeIso ? new Date(c.startTimeIso) : null
+          const running = start ? start.getTime() <= Date.now() : false
+          const when = start
+            ? start.toLocaleString('zh-CN', {
+              month: '2-digit', day: '2-digit', weekday: 'short',
+              hour: '2-digit', minute: '2-digit', hour12: false,
+            })
+            : '时间待定'
+          return (
+            <li key={c.id}>
+              <span className={`icpc-viz__badge icpc-viz__badge--${running ? 'live' : 'soon'}`}>
+                {running ? '进行中' : '即将开始'}
+              </span>
+              <a href={c.url} target="_blank" rel="noreferrer" className="icpc-viz__cname" title={c.name}>{c.name}</a>
+              <span className="icpc-viz__ctime">{when}</span>
+            </li>
+          )
+        })}
+      </ul>
+    </>
   )
 }
 
@@ -278,5 +320,13 @@ const CSS = `
 .icpc-viz__tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; font-size: 10px; border-radius: 999px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); border: 1px solid var(--dsw-alias-border-l4); }
 .icpc-viz__tag i { font-style: normal; color: #d97706; }
 .icpc-viz__muted { font-size: 11px; color: var(--dsw-alias-label-caption); }
+.icpc-viz__contests { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.icpc-viz__contests li { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 11px; }
+.icpc-viz__badge { font-size: 10px; padding: 1px 5px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l4); white-space: nowrap; }
+.icpc-viz__badge--soon { color: #2563eb; border-color: #93c5fd; }
+.icpc-viz__badge--live { color: #b91c1c; border-color: #fca5a5; }
+.icpc-viz__cname { color: var(--dsw-alias-label-primary); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icpc-viz__cname:hover { text-decoration: underline; }
+.icpc-viz__ctime { color: var(--dsw-alias-label-caption); white-space: nowrap; }
 .icpc-viz__loading, .icpc-viz__error { padding: 10px 4px; font-size: 12px; color: var(--dsw-alias-label-caption); }
 `

@@ -17,7 +17,7 @@ dsh plugin --profile desktop add github:SpringRinbowCat/dsh-algorithm-tools
 安装后**重启 DeepSeek Harness**（宿主侧插件不会热重载），然后：
 
 1. 任意会话 → 打开右侧「ICPC Workbench」面板（这一步才会把 `icpc_*` 工具注册进当前会话）
-2. 面板里点「提交同步」一次，或直接等它自动同步（打开面板即触发，30 分钟内不重复拉）
+2. 打开右侧面板即会自动增量同步（30 分钟节流）；今日训练完成后还会自动拉一次最新数据，题库每天自动刷新
 
 仓库里已经带了构建好的 `lib/`，**不需要本地编译**；只有改源码时才需要 `pnpm install && pnpm build`。
 
@@ -45,7 +45,7 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 | 数据持久化 | SQLite (node:sqlite) | JSON 文件（node:fs 落盘到 DSH_HOME/.icpc-data/） |
 | 网络请求 | Node `fetch` | 全局 `fetch`（Host 进程内可用） |
 | 适配范围 | CF + AtCoder + 洛谷 + 牛客 | **CF + AtCoder**（洛谷/牛客需 Cookie/反爬，首版不支持） |
-| Agent 接口 | Express REST 路由 | dsh `ctx.tools.register()`（13 个 `icpc_` 前缀工具） |
+| Agent 接口 | Express REST 路由 | dsh `ctx.tools.register()`（11 个 `icpc_` 前缀工具） |
 | 前端 | React SPA | dsh Slot UI 面板（设置页引导面板） |
 | 分析引擎 | 依赖 DB 的函数 | **纯函数**（输入 `SubmissionRow[]`，无 IO 依赖） |
 
@@ -89,7 +89,7 @@ dsh-algo-trainer/
 │   ├── templates/
 │   │   ├── curriculum.ts     # 114 课算法模板大纲（数据文件）
 │   │   └── progress.ts       # 学习进度管理（todo/learning/mastered + 下一课推荐）
-│   ├── tools/                # 13 个 agent 工具
+│   ├── tools/                # 11 个 agent 工具
 │   │   ├── helpers.ts        # textOutput / num / str 辅助
 │   │   ├── sync.ts           # icpc_sync — 同步刷题记录
 │   │   ├── stats.ts          # icpc_stats — 统计分析
@@ -100,9 +100,7 @@ dsh-algo-trainer/
 │   │   ├── contests.ts       # icpc_contests — 赛事中心
 │   │   ├── checkins.ts       # icpc_checkin — 日历打卡
 │   │   ├── settings.ts       # icpc_settings — 设置
-│   │   ├── import.ts         # icpc_import — 手动导入
 │   │   ├── problems.ts       # icpc_problems — 题目浏览
-│   │   └── export.ts         # icpc_export — 训练计划数据包导出
 ├── client/
 │   └── index.ts              # Client 半边：设置页引导面板（Slot UI）
 └── tests/
@@ -139,7 +137,7 @@ npm install        # prepare 钩子会自动构建 lib/
 AI 配置也可运行时通过 `icpc_settings` 工具修改（持久化到 JSON）。
 注意：`icpc_settings get` 返回的 apiKey / cookie 会脱敏显示。
 
-## Agent 工具（13 个）
+## Agent 工具（11 个）
 
 | 工具 | 功能 |
 |------|------|
@@ -153,9 +151,7 @@ AI 配置也可运行时通过 `icpc_settings` 工具修改（持久化到 JSON�
 | `icpc_contests` | 多平台赛事（CF+AtCoder 聚合） |
 | `icpc_checkin` | 日历打卡：streak/month/date/checkin/uncheck |
 | `icpc_settings` | 设置：get/set_account/set_ai/set_adapter/set_cookies/set_reminder |
-| `icpc_import` | 手动导入刷题记录（JSON/CSV） |
 | `icpc_problems` | 浏览/搜索题目库（platform/difficulty/tag/q/bank） |
-| `icpc_export` | 导出 AI 训练计划数据包（plan_package/plan_prompt） |
 
 ## Client 面板
 
@@ -188,6 +184,6 @@ npx tsx --test tests/**/*.test.ts
 
 - **`name`**: `'dsh-algo-trainer'`
 - **`inject`**: `['tools']` — 只依赖 dsh tools 服务；fs 接口不兼容、rpc 服务不存在，故均不注入
-- **`apply(ctx, config)`**: 加载 JSON 存储（load 完成后工具才可安全读写）→ 初始化 CF/AtCoder 适配器 → 注册 13 个工具 → `ctx.effect()` 注册 dispose 落盘
+- **`apply(ctx, config)`**: 加载 JSON 存储（load 完成后工具才可安全读写）→ 初始化 CF/AtCoder 适配器 → 注册 11 个工具 → `ctx.effect()` 注册 dispose 落盘
 - **`Config`**: 结构兼容的配置 schema（dataDir / ai）
 - **`dsh.client`**: `{ platform: 'web' }` — client 半边由构建后的 `lib/client.mjs`（`__ModuleLoader__` 包装）提供

@@ -1,4 +1,4 @@
-export type FeatureGroup = 'training' | 'records'
+export type FeatureGroup = 'training'
 export type FeatureIcon =
   | 'assistant'
   | 'overview'
@@ -25,7 +25,6 @@ export interface WorkbenchFeature {
 
 export const FEATURE_GROUPS: ReadonlyArray<{ id: FeatureGroup; label: string }> = [
   { id: 'training', label: '训练' },
-  { id: 'records', label: '记录与设置' },
 ]
 
 export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
@@ -67,30 +66,6 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     description: '114 课算法模板与进度',
     icon: 'templates',
     prompt: '请调用 icpc_templates 工具浏览我的模板课程，并推荐下一课。',
-  },
-  {
-    id: 'problems',
-    group: 'records',
-    label: '题目管理',
-    description: '搜索题库与题目详情',
-    icon: 'problems',
-    prompt: '请调用 icpc_problems 工具浏览题目库，并询问我需要的平台、难度或标签筛选。',
-  },
-  {
-    id: 'sync',
-    group: 'records',
-    label: '提交同步',
-    description: '同步 Codeforces 与 AtCoder',
-    icon: 'sync',
-    prompt: '请调用 icpc_sync 工具同步我已绑定平台的刷题记录，并汇报新增提交数。',
-  },
-  {
-    id: 'contests',
-    group: 'records',
-    label: '赛事中心',
-    description: '近期 Codeforces 与 AtCoder',
-    icon: 'contests',
-    prompt: '请调用 icpc_contests 工具列出近期赛事，并按开赛时间排序。',
   },
 ]
 

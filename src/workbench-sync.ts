@@ -12,7 +12,9 @@ import { syncPlatform, syncBank } from './tools/sync-helpers.ts'
 import { collectLocalReviews } from './reviews/collect.ts'
 
 const THROTTLE_MS = 30 * 60 * 1000
+const FORCE_THROTTLE_MS = 5 * 60 * 1000
 const BANK_BOOTSTRAP_THRESHOLD = 1000
+const BANK_REFRESH_MS = 24 * 60 * 60 * 1000
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.statusCode = status
@@ -35,15 +37,16 @@ interface SyncSummary {
   throttled: boolean
 }
 
-async function runSync(host: IcpcHost): Promise<SyncSummary> {
+async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
   const settings = host.store.getSettings()
   const summary: SyncSummary = { ok: true, synced: [], bank: null, reviews: null, throttled: false }
   const now = Date.now()
+  const threshold = force ? FORCE_THROTTLE_MS : THROTTLE_MS
 
   for (const [pf, account] of Object.entries(settings.accounts)) {
     if (!account?.handle || !account.enabled) continue
     const last = account.lastSyncAt ? Date.parse(account.lastSyncAt) : 0
-    if (Number.isFinite(last) && now - last < THROTTLE_MS) {
+    if (Number.isFinite(last) && now - last < threshold) {
       summary.synced.push({ platform: pf, skipped: true })
       continue
     }
@@ -62,9 +65,12 @@ async function runSync(host: IcpcHost): Promise<SyncSummary> {
     return summary
   }
 
-  // 题库为空（还没同步过）时顺手补一次，让「今日训练」不再只从做过的题里选
-  if (host.store.countProblems('codeforces') < BANK_BOOTSTRAP_THRESHOLD) {
+  // 题库：首次（没同步过）或距上次刷新超过 24 小时 → 自动拉最新题目
+  const bankAt = host.store.getBankSyncedAt()
+  const bankStale = !bankAt || now - Date.parse(bankAt) > BANK_REFRESH_MS
+  if (host.store.countProblems('codeforces') < BANK_BOOTSTRAP_THRESHOLD || bankStale) {
     const bank = await syncBank(host, 'codeforces')
+    if (bank.errors.length === 0) host.store.setBankSyncedAt(new Date().toISOString())
     summary.bank = { platform: bank.platform, fetched: bank.fetched, inserted: bank.inserted }
   }
 
@@ -82,9 +88,9 @@ export function registerSyncRoute(
   if (!ctx.webServer) return
   let inFlight: Promise<SyncSummary> | null = null
 
-  const run = (): Promise<SyncSummary> => {
+  const run = (force = false): Promise<SyncSummary> => {
     if (!inFlight) {
-      inFlight = runSync(host).finally(() => {
+      inFlight = runSync(host, force).finally(() => {
         inFlight = null
       })
     }
@@ -106,7 +112,9 @@ export function registerSyncRoute(
           return
         }
         try {
-          sendJson(res, 200, await run())
+          const url = new URL(req.url ?? '/', 'http://localhost')
+          const force = url.searchParams.get('force') === '1'
+          sendJson(res, 200, await run(force))
         } catch (e) {
           sendJson(res, 500, { ok: false, error: (e as Error).message })
         }
