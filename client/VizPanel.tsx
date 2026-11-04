@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 export interface DayCell {
   date: string
@@ -108,7 +108,26 @@ export function VizPanel({ overview, stats, contests, error = null }: VizPanelPr
   )
 }
 
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return '已开始'
+  const totalSec = Math.floor(ms / 1000)
+  const d = Math.floor(totalSec / 86400)
+  const h = Math.floor((totalSec % 86400) / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (d > 0) return `${d} 天 ${h} 小时`
+  if (h > 0) return `${h} 小时 ${m} 分`
+  if (m > 0) return `${m} 分 ${String(s).padStart(2, '0')} 秒`
+  return `${s} 秒`
+}
+
 function ContestsView({ data }: { data: ContestItem[] | null }): ReactNode {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
   if (!data) return <div className="icpc-viz__loading">加载赛事…</div>
   if (data.length === 0) return <div className="icpc-viz__muted">近期没有 Codeforces 赛事</div>
   return (
@@ -116,21 +135,26 @@ function ContestsView({ data }: { data: ContestItem[] | null }): ReactNode {
       <div className="icpc-viz__section">Codeforces 近期赛事</div>
       <ul className="icpc-viz__contests">
         {data.map((c) => {
-          const start = c.startTimeIso ? new Date(c.startTimeIso) : null
-          const running = start ? start.getTime() <= Date.now() : false
-          const when = start
-            ? start.toLocaleString('zh-CN', {
+          const startMs = c.startTimeIso ? new Date(c.startTimeIso).getTime() : null
+          const endMs = startMs === null ? null : startMs + c.durationMinutes * 60_000
+          const running = startMs !== null && endMs !== null && now >= startMs && now < endMs
+          const soon = startMs !== null && now < startMs && startMs - now < 60 * 60 * 1000
+          const when = startMs === null
+            ? '时间待定'
+            : new Date(startMs).toLocaleString('zh-CN', {
               month: '2-digit', day: '2-digit', weekday: 'short',
               hour: '2-digit', minute: '2-digit', hour12: false,
             })
-            : '时间待定'
+          const countdown = running && endMs !== null
+            ? `进行中 · 还剩 ${formatCountdown(endMs - now)}`
+            : startMs === null
+              ? '—'
+              : formatCountdown(startMs - now)
           return (
             <li key={c.id}>
-              <span className={`icpc-viz__badge icpc-viz__badge--${running ? 'live' : 'soon'}`}>
-                {running ? '进行中' : '即将开始'}
-              </span>
-              <a href={c.url} target="_blank" rel="noreferrer" className="icpc-viz__cname" title={c.name}>{c.name}</a>
               <span className="icpc-viz__ctime">{when}</span>
+              <a href={c.url} target="_blank" rel="noreferrer" className="icpc-viz__cname" title={c.name}>{c.name}</a>
+              <span className={`icpc-viz__count ${running ? 'is-live' : soon ? 'is-soon' : ''}`}>{countdown}</span>
             </li>
           )
         })}
@@ -321,10 +345,10 @@ const CSS = `
 .icpc-viz__tag i { font-style: normal; color: #d97706; }
 .icpc-viz__muted { font-size: 11px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__contests { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
-.icpc-viz__contests li { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 11px; }
-.icpc-viz__badge { font-size: 10px; padding: 1px 5px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l4); white-space: nowrap; }
-.icpc-viz__badge--soon { color: #2563eb; border-color: #93c5fd; }
-.icpc-viz__badge--live { color: #b91c1c; border-color: #fca5a5; }
+.icpc-viz__contests li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11px; }
+.icpc-viz__count { white-space: nowrap; color: var(--dsw-alias-label-secondary); font-variant-numeric: tabular-nums; }
+.icpc-viz__count.is-soon { color: #d97706; }
+.icpc-viz__count.is-live { color: #16a34a; font-weight: 600; }
 .icpc-viz__cname { color: var(--dsw-alias-label-primary); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .icpc-viz__cname:hover { text-decoration: underline; }
 .icpc-viz__ctime { color: var(--dsw-alias-label-caption); white-space: nowrap; }
