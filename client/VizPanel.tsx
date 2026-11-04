@@ -18,7 +18,13 @@ export interface Overview {
     ac: number
     submissions: number
     tasks: { total: number; checked: number }
-    training: { total: number; completed: number; started: boolean; done: boolean }
+    training: {
+      total: number
+      completed: number
+      started: boolean
+      done: boolean
+      remaining: Array<{ problemKey: string; url: string | null }>
+    }
     done: boolean
     advice: { kind: 'catchup' | 'extra'; title: string; items: string[] }
   }
@@ -115,6 +121,13 @@ function CalendarView({ data }: { data: Overview }): ReactNode {
       <div className={`icpc-viz__advice icpc-viz__advice--${t.advice.kind}`}>
         <strong>{t.advice.title}</strong>
         <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
+        {t.training.remaining.length > 0 ? (
+          <div className="icpc-viz__left">
+            {t.training.remaining.map((r) => (r.url
+              ? <a key={r.problemKey} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
+              : <span key={r.problemKey}>{r.problemKey}</span>))}
+          </div>
+        ) : null}
       </div>
 
       <div className="icpc-viz__grid" title="最近 12 周：颜色越深 = 当天 AC 越多或计划已完成">
@@ -234,6 +247,10 @@ const CSS = `
 .icpc-viz__advice--catchup { border-color: #d97706; }
 .icpc-viz__advice--extra { border-color: #16a34a; }
 .icpc-viz__advice ul { margin: 6px 0 0; padding-left: 16px; color: var(--dsw-alias-label-secondary); }
+.icpc-viz__left { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.icpc-viz__left a, .icpc-viz__left span { font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--dsw-alias-border-l4); text-decoration: none; color: var(--dsw-alias-label-primary); }
+.icpc-viz__left a:hover { background: var(--dsw-alias-interactive-bg-hover); text-decoration: underline; }
+.icpc-viz__left span { opacity: 0.6; }
 .icpc-viz__grid { display: flex; gap: 3px; margin-top: 12px; overflow-x: auto; }
 .icpc-viz__week { display: grid; grid-template-rows: repeat(7, 10px); gap: 3px; }
 .icpc-viz__cell { width: 10px; height: 10px; border-radius: 2px; background: var(--dsw-alias-interactive-bg-hover); }

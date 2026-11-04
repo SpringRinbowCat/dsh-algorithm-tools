@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { activateWorkbench } from './api.ts'
 import { VizPanel, type Overview, type Stats } from './VizPanel.tsx'
 import {
@@ -30,6 +30,7 @@ export function WorkbenchPanel({
   const [overview, setOverview] = useState<Overview | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
   const [vizError, setVizError] = useState<string | null>(null)
+  const loadRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     let alive = true
@@ -52,6 +53,7 @@ export function WorkbenchPanel({
           if (alive) setVizError(e instanceof Error ? e.message : String(e))
         })
     }
+    loadRef.current = load
     load()
     // 打开训练台时自动增量同步（服务端 30 分钟内只拉一次），完成后刷新概览
     fetch('/icpc-workbench/sync', { method: 'POST' })
@@ -71,7 +73,9 @@ export function WorkbenchPanel({
     }
   }, [])
 
-  const todayDone = overview?.today.done === true
+  // 红点 = 今天还没抽过今日训练（没有训练索引），点过「今日训练」就消失
+  const trainingStarted = (overview?.today.training.total ?? 0) > 0
+  const showTodayDot = overview !== null && !trainingStarted
 
   async function runFeature(feature: WorkbenchFeature): Promise<void> {
     if (!sessionId) {
@@ -93,6 +97,11 @@ export function WorkbenchPanel({
       }
       inputActions.setDraft(featurePrompt(feature.id))
       queueMicrotask(() => inputActions.submit())
+      // 工具在后台跑（抽题 / 同步 / 打卡），隔几个时间点重新拉一次总览，
+      // 这样日历与红点能跟上真实状态，而不是等 60 秒轮询。
+      for (const ms of [1500, 4000, 8000, 15000]) {
+        window.setTimeout(() => loadRef.current(), ms)
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
@@ -137,8 +146,8 @@ export function WorkbenchPanel({
                   <span className="icpc-workbench__copy">
                     <span className="icpc-workbench__label">
                       {feature.label}
-                      {feature.id === 'today' && !todayDone
-                        ? <i className="icpc-workbench__dot" aria-label="今日训练未完成" title="今日训练未完成" />
+                      {feature.id === 'today' && showTodayDot
+                        ? <i className="icpc-workbench__dot" aria-label="今天还没抽今日训练" title="今天还没抽今日训练" />
                         : null}
                     </span>
                     <span className="icpc-workbench__description">{feature.description}</span>

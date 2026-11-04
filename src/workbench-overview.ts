@@ -26,7 +26,14 @@ export interface TodayStatus {
   ac: number
   submissions: number
   tasks: { total: number; checked: number }
-  training: { total: number; completed: number; started: boolean; done: boolean }
+  training: {
+    total: number
+    completed: number
+    started: boolean
+    done: boolean
+    /** 还没 AC 的今日训练题（带可跳转链接），供面板渲染成超链接 */
+    remaining: Array<{ problemKey: string; url: string | null }>
+  }
   done: boolean
   advice: { kind: 'catchup' | 'extra'; title: string; items: string[] }
 }
@@ -101,12 +108,18 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
   }
 
   if (!training.done) {
-    const left = index.filter((k) => !acKeys.has(k)).map((k) => k.split(':')[1])
+    const left = index
+      .filter((k) => !acKeys.has(k))
+      .map((k) => {
+        const [platform, problemKey] = k.split(':')
+        const problem = store.findProblem(platform as never, problemKey)
+        return { problemKey, url: problem?.url ?? null }
+      })
     const items: string[] = []
     if (index.length === 0) {
       items.push('今天还没开始训练：点「今日训练」抽出今天的 3 档题')
     } else {
-      items.push(`今日训练还剩 ${left.length} 题：${left.slice(0, 6).join('、')}`)
+      items.push(`今日训练还剩 ${left.length} 题`)
     }
     if (pending.length > 0) items.push(`未完成任务：${pending.slice(0, 3).map((t) => t.title).join('；')}`)
     if (unresolved.length > 0) items.push(`今天试过但没 AC：${unresolved.slice(0, 3).join('、')}`)
@@ -115,7 +128,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
       ac: cell.ac,
       submissions: cell.submissions,
       tasks: { total: tasks.length, checked: tasks.length - pending.length },
-      training,
+      training: { ...training, remaining: left },
       done: false,
       advice: {
         kind: 'catchup',
@@ -130,7 +143,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     ac: cell.ac,
     submissions: cell.submissions,
     tasks: { total: tasks.length, checked: tasks.length },
-    training,
+    training: { ...training, remaining: [] },
     done: true,
     advice: {
       kind: 'extra',
