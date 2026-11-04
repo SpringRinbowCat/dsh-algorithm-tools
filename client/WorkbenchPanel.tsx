@@ -195,8 +195,8 @@ export function HeaderAction({ open }: HeaderActionProps): ReactNode {
     <button
       className="icpc-header-action"
       type="button"
-      title="打开 ICPC Workbench"
-      aria-label="打开 ICPC Workbench"
+      title="打开 Algorithm Practice Space"
+      aria-label="打开 Algorithm Practice Space"
       onClick={open}
     >
       <Icon name="trophy" size={16} />

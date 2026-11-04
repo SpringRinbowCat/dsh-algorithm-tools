@@ -146,7 +146,7 @@ function SettingsPanel(): unknown {
     createElement(
       'p',
       { style: { margin: '0 0 12px 0', fontSize: '13px', color: 'var(--dsw-alias-label-caption)' } },
-      '在会话头部打开 ICPC Workbench；点击功能入口后才会把训练工具注册到当前会话。',
+      '在会话头部打开 Algorithm Practice Space；点击功能入口后才会把训练工具注册到当前会话。',
     ),
     createElement(
       'div',
