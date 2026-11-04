@@ -95,7 +95,20 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
           const id = Number(args.planId)
           const plan = store.getPlan(id)
           if (!plan) return { ok: false, error: '计划不存在' }
-          return { ok: true, plan }
+          // 归一化可选字段，避免 undefined 让工具结果无法无损序列化
+          return {
+            ok: true,
+            plan: {
+              ...plan,
+              tasks: plan.tasks.map((t) => ({
+                ...t,
+                platform: t.platform ?? null,
+                problemKey: t.problemKey ?? null,
+                url: t.url ?? null,
+                note: t.note ?? null,
+              })),
+            },
+          }
         }
 
         case 'checkin': {
