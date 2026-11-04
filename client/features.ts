@@ -54,10 +54,10 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
   {
     id: 'reviews',
     group: 'training',
-    label: '复习库',
-    description: '到期复评与遗忘曲线',
+    label: 'rank 复盘',
+    description: '近期比赛复盘与薄弱项',
     icon: 'reviews',
-    prompt: '请调用 icpc_review 工具列出我的复习库，并优先展示今天到期的题目。',
+    prompt: '请调用 icpc_review 工具（action=contests）列出我近期参与的比赛并复盘：每题用时、未通过原因、代码优化点、暴露的薄弱项。',
   },
 ]
 

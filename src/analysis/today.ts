@@ -65,6 +65,7 @@ export function pickBand(
   excludeIds: Set<number>,
   rotate = 0,
   focusTags: string[] = [],
+  tagScores?: Map<string, number>,
 ): { problems: TodayProblem[]; pool: number } {
   const inBand = candidates.filter(
     (c) =>
@@ -76,12 +77,14 @@ export function pickBand(
       !excludeIds.has(c.id),
   )
   const focus = new Set(focusTags)
+  const scoreOf = (tags: string[]): number =>
+    tagScores ? tags.reduce((s, t) => s + (tagScores.get(t) ?? 0), 0) : 0
   const ordered = inBand
     .map((c) => ({ c, weak: weakOverlap(c.tags, weakTags), focus: c.tags.filter((t) => focus.has(t)) }))
     .sort(
       (a, b) =>
-        // 本周计划方向优先（权重高于泛化弱项），再按弱项命中数，再按离档位中心的距离
-        b.focus.length * 2 + b.weak.length - (a.focus.length * 2 + a.weak.length) ||
+        // 本周计划方向优先，其次「历史弱项 50% + 最近比赛复盘 50%」的加权标签分
+        b.focus.length * 2 + scoreOf(b.c.tags) - (a.focus.length * 2 + scoreOf(a.c.tags)) ||
         Math.abs((a.c.difficulty ?? 0) - (band.center ?? 0)) -
           Math.abs((b.c.difficulty ?? 0) - (band.center ?? 0)) ||
         a.c.id - b.c.id,

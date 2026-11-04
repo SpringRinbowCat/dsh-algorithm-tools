@@ -133,7 +133,7 @@ function SettingsPanel(): unknown {
     ['icpc_today', '今日三档训练推荐'],
     ['icpc_generate_plan', '生成训练计划'],
     ['icpc_manage_plan', '计划管理 / 打卡'],
-    ['icpc_review', '间隔复习库'],
+    ['icpc_review', 'rank 复盘 / 复习'],
     ['icpc_contests', '赛事中心'],
     ['icpc_problems', '浏览 / 搜索题目库'],
     ['icpc_checkin', '今日完成度 / 日历打卡'],

@@ -4,17 +4,36 @@ import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT } from './helpers.ts'
 import { scheduleNext, intervalDaysForStage } from '../reviews/schedule.ts'
 import { collectLocalReviews } from '../reviews/collect.ts'
+import { scanLocalProblems } from '../reviews/local.ts'
 import { localDay } from '../util/local-date.ts'
+import { buildReplay, recentContestIds, type ContestMeta } from '../analysis/replay.ts'
+
+async function contestMetaMap(host: IcpcHost): Promise<Map<number, ContestMeta>> {
+  const map = new Map<number, ContestMeta>()
+  try {
+    const list = await host.adapters['codeforces'].fetchContests()
+    for (const c of list) {
+      const id = Number(String(c.id).replace(/^cf-/, ''))
+      if (!Number.isFinite(id)) continue
+      map.set(id, { name: c.name, startTimeIso: c.startTimeIso, durationMinutes: c.durationMinutes })
+    }
+  } catch {
+    // 拉不到比赛元数据时，复盘仍可用提交数据（只是没有开赛时间）
+  }
+  return map
+}
 
 export function registerReviewTool(host: IcpcHost, ctx: Context): () => void {
   return ctx.tools.register(defineTool({
     name: 'icpc_review',
     description:
-      '管理间隔复习库（1/3/7/14/30/60 天）。action=list 列出队列（due=true 只看到期）；' +
-      'action=scan 从本地 Codeforces 目录（默认 D:\\codeforces）自动收题，未 AC 的标注待补；' +
+      'Rank 复盘与间隔复习。action=contests 列出近期参与过的比赛（按提交聚合）；' +
+      'action=contest 复盘单场（每题用时/尝试/失败原因/暴露的薄弱标签，并给本地赛事代码路径）；' +
+      'action=list 复习队列（due=true 只看到期）；action=scan 从本地目录自动收题；' +
       'action=add 手动加题；action=feedback 反馈排期（hard/ok/easy）；action=note 笔记；action=remove 移出。',
     parameters: {
-      action: { type: 'string', required: true, enum: ['list', 'scan', 'add', 'feedback', 'note', 'remove'] },
+      action: { type: 'string', required: true, enum: ['contests', 'contest', 'list', 'scan', 'add', 'feedback', 'note', 'remove'] },
+      contestId: { type: 'number', description: '比赛号，如 2283（contest 动作）' },
       due: { type: 'boolean', description: 'list 时只看到期（默认 false）' },
       root: { type: 'string', description: 'scan 的根目录（默认 D:\\codeforces）' },
       platform: { type: 'string', enum: ['codeforces', 'atcoder'], description: '平台（add）' },
@@ -29,6 +48,32 @@ export function registerReviewTool(host: IcpcHost, ctx: Context): () => void {
       const action = args.action as string
 
       switch (action) {
+        case 'contests': {
+          const metas = await contestMetaMap(host)
+          const ids = recentContestIds(store, 30)
+          const rows = ids.map((id) => {
+            const meta = metas.get(id) ?? { name: 'contest ' + id, startTimeIso: null, durationMinutes: 120 }
+            const r = buildReplay(store, id, meta)
+            return {
+              contestId: id, name: r.name, startAt: r.startAt,
+              problems: r.summary.problems, solved: r.summary.solved, attempts: r.summary.attempts,
+              weakTags: r.weakTags.slice(0, 3),
+            }
+          })
+          return { ok: true, contests: rows }
+        }
+
+        case 'contest': {
+          const id = Number(args.contestId)
+          if (!Number.isInteger(id)) return { ok: false, error: 'contestId 必填' }
+          const metas = await contestMetaMap(host)
+          const meta = metas.get(id) ?? { name: 'contest ' + id, startTimeIso: null, durationMinutes: 120 }
+          const report = buildReplay(store, id, meta)
+          // 本地赛事代码：按题号找到 .cpp，交给模型评估写法/复杂度
+          const local = scanLocalProblems().problems.filter((p) => report.problems.some((x) => x.problemKey === p.problemKey))
+          return { ok: true, report, codeFiles: local.map((p) => ({ problemKey: p.problemKey, file: p.file })) }
+        }
+
         case 'list':
           return { ok: true, items: store.listReviews(args.due === true).map((r) => ({ ...r, intervalDays: intervalDaysForStage(r.stage) })) }
 
@@ -79,6 +124,6 @@ export function registerReviewTool(host: IcpcHost, ctx: Context): () => void {
           return { ok: false, error: `未知 action: ${action}` }
       }
     },
-    presentCall: (args) => ({ card: 'generic', title: `复习：${args.action}` }),
+    presentCall: (args) => ({ card: 'generic', title: `复盘/复习：${args.action}` }),
   }))
 }
