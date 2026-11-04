@@ -240,7 +240,7 @@ function CalendarView({ data }: { data: Overview }): ReactNode {
           <div className="icpc-viz__meta">
             训练 {t.training.completed}/{t.training.total}
             {t.planTasks.total > 0 ? ` + 计划 ${t.planTasks.completed}/${t.planTasks.total}` : ''}
-            {' · '}今天 AC {t.ac} 题（总） · 提交 {t.submissions}
+            {' · '}今日累计 AC {t.ac} 题 · 累计提交 {t.submissions} 次
           </div>
         </div>
         <div className="icpc-viz__streak">
