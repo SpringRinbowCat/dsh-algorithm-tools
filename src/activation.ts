@@ -6,7 +6,6 @@ import { registerStatsTool } from './tools/stats.ts'
 import { registerTodayTool } from './tools/today.ts'
 import { registerPlanTools } from './tools/plans.ts'
 import { registerReviewTool } from './tools/reviews.ts'
-import { registerTemplateTool } from './tools/templates.ts'
 import { registerContestTool } from './tools/contests.ts'
 import { registerCheckinTool } from './tools/checkins.ts'
 import { registerSettingsTool } from './tools/settings.ts'
@@ -19,7 +18,6 @@ export const ICPC_TOOL_NAMES = [
   'icpc_generate_plan',
   'icpc_manage_plan',
   'icpc_review',
-  'icpc_templates',
   'icpc_contests',
   'icpc_checkin',
   'icpc_settings',
@@ -33,7 +31,6 @@ export function registerIcpcTools(host: IcpcHost, targetCtx: Context): () => voi
     registerTodayTool(host, targetCtx),
     registerPlanTools(host, targetCtx),
     registerReviewTool(host, targetCtx),
-    registerTemplateTool(host, targetCtx),
     registerContestTool(host, targetCtx),
     registerCheckinTool(host, targetCtx),
     registerSettingsTool(host, targetCtx),

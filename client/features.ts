@@ -59,14 +59,6 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     icon: 'reviews',
     prompt: '请调用 icpc_review 工具列出我的复习库，并优先展示今天到期的题目。',
   },
-  {
-    id: 'templates',
-    group: 'training',
-    label: '模板库',
-    description: '114 课算法模板与进度',
-    icon: 'templates',
-    prompt: '请调用 icpc_templates 工具浏览我的模板课程，并推荐下一课。',
-  },
 ]
 
 export function featurePrompt(id: string): string {
