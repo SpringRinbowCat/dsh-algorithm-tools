@@ -108,6 +108,11 @@ export function VizPanel({ overview, stats, contests, error = null }: VizPanelPr
   )
 }
 
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+/** 倒计时统一精确到秒：≥1 天用「N 天 HH:MM:SS」，否则 HH:MM:SS / MM:SS */
 function formatCountdown(ms: number): string {
   if (ms <= 0) return '已开始'
   const totalSec = Math.floor(ms / 1000)
@@ -115,10 +120,9 @@ function formatCountdown(ms: number): string {
   const h = Math.floor((totalSec % 86400) / 3600)
   const m = Math.floor((totalSec % 3600) / 60)
   const s = totalSec % 60
-  if (d > 0) return `${d} 天 ${h} 小时`
-  if (h > 0) return `${h} 小时 ${m} 分`
-  if (m > 0) return `${m} 分 ${String(s).padStart(2, '0')} 秒`
-  return `${s} 秒`
+  if (d > 0) return `${d} 天 ${pad2(h)}:${pad2(m)}:${pad2(s)}`
+  if (h > 0) return `${pad2(h)}:${pad2(m)}:${pad2(s)}`
+  return `${pad2(m)}:${pad2(s)}`
 }
 
 function ContestsView({ data }: { data: ContestItem[] | null }): ReactNode {
