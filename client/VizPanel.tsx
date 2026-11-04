@@ -25,6 +25,11 @@ export interface Overview {
       done: boolean
       remaining: Array<{ problemKey: string; url: string | null }>
     }
+    planTasks: {
+      total: number
+      completed: number
+      remaining: Array<{ problemKey: string; url: string | null }>
+    }
     done: boolean
     advice: { kind: 'catchup' | 'extra'; title: string; items: string[] }
   }
@@ -226,10 +231,16 @@ function CalendarView({ data }: { data: Overview }): ReactNode {
       <div className="icpc-viz__head">
         <div>
           <div className="icpc-viz__state">
-            {t.done ? '今日训练已完成' : t.training.total === 0 ? '今日未开始' : '今日训练未完成'}
+            {t.done
+              ? '今日训练已完成'
+              : t.training.total === 0 && t.planTasks.total === 0
+                ? '今日未开始'
+                : '今日训练未完成'}
           </div>
           <div className="icpc-viz__meta">
-            训练 {t.training.completed}/{t.training.total} · 今天 AC {t.ac} 题（总） · 提交 {t.submissions}
+            训练 {t.training.completed}/{t.training.total}
+            {t.planTasks.total > 0 ? ` + 计划 ${t.planTasks.completed}/${t.planTasks.total}` : ''}
+            {' · '}今天 AC {t.ac} 题（总） · 提交 {t.submissions}
           </div>
         </div>
         <div className="icpc-viz__streak">
@@ -246,6 +257,14 @@ function CalendarView({ data }: { data: Overview }): ReactNode {
             {t.training.remaining.map((r) => (r.url
               ? <a key={r.problemKey} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
               : <span key={r.problemKey}>{r.problemKey}</span>))}
+          </div>
+        ) : null}
+        {t.planTasks.remaining.length > 0 ? (
+          <div className="icpc-viz__left">
+            <i className="icpc-viz__grouplabel">计划</i>
+            {t.planTasks.remaining.map((r) => (r.url
+              ? <a key={`p-${r.problemKey}`} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
+              : <span key={`p-${r.problemKey}`}>{r.problemKey}</span>))}
           </div>
         ) : null}
       </div>
@@ -371,6 +390,7 @@ const CSS = `
 .icpc-viz__left a, .icpc-viz__left span { font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--dsw-alias-border-l4); text-decoration: none; color: var(--dsw-alias-label-primary); }
 .icpc-viz__left a:hover { background: var(--dsw-alias-interactive-bg-hover); text-decoration: underline; }
 .icpc-viz__left span { opacity: 0.6; }
+.icpc-viz__grouplabel { font-style: normal; font-size: 10px; color: var(--dsw-alias-label-caption); align-self: center; }
 .icpc-viz__grid { display: flex; gap: 3px; margin-top: 12px; overflow-x: auto; }
 .icpc-viz__week { display: grid; grid-template-rows: repeat(7, 10px); gap: 3px; }
 .icpc-viz__cell { width: 10px; height: 10px; border-radius: 2px; background: var(--dsw-alias-interactive-bg-hover); }

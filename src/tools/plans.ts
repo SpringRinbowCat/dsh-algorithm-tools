@@ -32,6 +32,7 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
             title: t.title,
             kind: t.kind,
             platform: t.platform,
+            problemKey: t.problemKey,
             url: t.url ?? null,
             note: t.note ?? null,
             checked: false,

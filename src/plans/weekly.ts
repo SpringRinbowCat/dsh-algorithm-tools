@@ -120,6 +120,16 @@ export function buildWeeklyPlan(
 
   const weeks: WeekPlan[] = []
   const tasks: PlanTaskInput[] = []
+  const usedKeys = new Set<string>()
+
+  /** 某方向的候选题（题库里未做过的，难度落在计划区间），按离区间中心由近到远 */
+  const poolFor = (tag: string): Array<{ platform: string; problemKey: string; title: string; url: string | null }> => {
+    const center = (low + high) / 2
+    return store.browseProblems({ bank: true, tag, limit: 8000 })
+      .filter((p) => p.difficulty != null && p.difficulty >= low && p.difficulty <= high && p.attempts === 0)
+      .sort((a, b) => Math.abs((a.difficulty ?? 0) - center) - Math.abs((b.difficulty ?? 0) - center))
+      .map((p) => ({ platform: p.platform, problemKey: p.problemKey, title: p.title, url: p.url }))
+  }
 
   for (let w = 0; w < weekCount; w++) {
     const pick = picked[w] ?? { tag: 'implementation', gap: 0, attempts: 0 }
@@ -131,22 +141,58 @@ export function buildWeeklyPlan(
       : `巩固 ${pick.tag}：上一轮已经练过，这周用更高一档难度再走一遍。`
     weeks.push({ week: w + 1, startDate: weekStart, endDate: weekEnd, direction, tags: [pick.tag], rationale })
 
+    const pool = poolFor(pick.tag)
+    let cursor = 0
+    const take = (n: number): typeof pool => {
+      const out: typeof pool = []
+      while (out.length < n && cursor < pool.length) {
+        const p = pool[cursor++]
+        const key = `${p.platform}:${p.problemKey}`
+        if (usedKeys.has(key)) continue
+        usedKeys.add(key)
+        out.push(p)
+      }
+      return out
+    }
+
     for (let d = 0; d < 7; d++) {
       const date = addDays(weekStart, d)
       if (date > addDays(startDate, days - 1)) break
-      const isReviewDay = d === 6
-      const count = isReviewDay ? 1 : 2 + (w > 0 ? 1 : 0)
-      tasks.push({
-        date,
-        title: isReviewDay
-          ? `W${w + 1} 复盘：${shortDirection(direction)} · 回看本周错题`
-          : `W${w + 1} ${shortDirection(direction)} · ${count} 题（${low}–${high}）`,
-        kind: isReviewDay ? 'review' : 'practice',
-        platform: 'codeforces',
-        note: isReviewDay
-          ? '把本周没做出来的题重写一遍；到期复习用 icpc_review list。'
-          : '具体题目用 icpc_today 现选（本方向优先）；做完用 icpc_checkin 勾掉。',
-      })
+      if (d === 6) {
+        tasks.push({
+          date,
+          title: `W${w + 1} 复盘：${shortDirection(direction)} · 回看本周错题`,
+          kind: 'review',
+          platform: 'codeforces',
+          note: '把本周没做出来的题重写一遍；到期复习用 icpc_review list。',
+        })
+        continue
+      }
+
+      const count = 2 + (w > 0 ? 1 : 0)
+      const picks = take(count)
+      if (picks.length === 0) {
+        tasks.push({
+          date,
+          title: `W${w + 1} ${shortDirection(direction)} · ${count} 题（${low}–${high}）`,
+          kind: 'practice',
+          platform: 'codeforces',
+          note: '题库里这个方向的题不够了，用 icpc_today 现选。',
+        })
+        continue
+      }
+      // 一道题一个任务：这样计划里的题能直接计入今日训练完成度
+      for (const p of picks) {
+        tasks.push({
+          date,
+          title: `W${w + 1} ${shortDirection(direction)} · ${p.problemKey} ${p.title}`,
+          kind: 'practice',
+          platform: p.platform,
+          problemKey: p.problemKey,
+          url: p.url,
+          note: `${shortDirection(direction)} · 难度区间 ${low}–${high}`,
+        })
+      }
     }
   }
 

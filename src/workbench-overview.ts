@@ -34,6 +34,12 @@ export interface TodayStatus {
     /** 还没 AC 的今日训练题（带可跳转链接），供面板渲染成超链接 */
     remaining: Array<{ problemKey: string; url: string | null }>
   }
+  /** 计划里今天的任务题（单独计数，面板显示成「训练 0/6 + 计划 0/2」） */
+  planTasks: {
+    total: number
+    completed: number
+    remaining: Array<{ problemKey: string; url: string | null }>
+  }
   done: boolean
   advice: { kind: 'catchup' | 'extra'; title: string; items: string[] }
 }
@@ -97,6 +103,18 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     done: index.length > 0 && completed.length === index.length,
   }
 
+  // 计划里今天带题号的任务（v4.1 起计划任务具体到题），单独计数
+  const planTaskList = tasks.filter((t) => t.problemKey && t.platform)
+  const planRemaining = planTaskList
+    .filter((t) => !acKeys.has(`${t.platform}:${t.problemKey}`))
+    .map((t) => ({ problemKey: t.problemKey as string, url: t.url ?? null }))
+  const planTasks = {
+    total: planTaskList.length,
+    completed: planTaskList.length - planRemaining.length,
+    remaining: planRemaining,
+  }
+  const planDone = planTaskList.length === 0 || planRemaining.length === 0
+
   const unresolved: string[] = []
   const seen = new Set<string>()
   for (const s of store.getSubmissionRows()) {
@@ -107,7 +125,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     if (!acKeys.has(key)) unresolved.push(s.problemKey)
   }
 
-  if (!training.done) {
+  if (!training.done || !planDone) {
     const left = index
       .filter((k) => !acKeys.has(k))
       .map((k) => {
@@ -118,21 +136,25 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     const items: string[] = []
     if (index.length === 0) {
       items.push('今天还没开始训练：点「今日训练」抽出今天的 3 档题')
-    } else {
+    } else if (!training.done) {
       items.push(`今日训练还剩 ${left.length} 题`)
     }
+    if (!planDone) items.push(`计划任务还剩 ${planRemaining.length} 题：${planRemaining.map((p) => p.problemKey).join('、')}`)
     if (pending.length > 0) items.push(`未完成任务：${pending.slice(0, 3).map((t) => t.title).join('；')}`)
-    if (unresolved.length > 0) items.push(`今天试过但没 AC：${unresolved.slice(0, 3).join('、')}`)
+    if (unresolved.length > 0 && !training.done) items.push(`今天试过但没 AC：${unresolved.slice(0, 3).join('、')}`)
     return {
       date: todayStr,
       ac: cell.ac,
       submissions: cell.submissions,
       tasks: { total: tasks.length, checked: tasks.length - pending.length },
       training: { ...training, remaining: left },
+      planTasks,
       done: false,
       advice: {
         kind: 'catchup',
-        title: index.length === 0 ? '今日未开始' : `今日训练 ${completed.length}/${index.length}`,
+        title: index.length === 0 && planTasks.total === 0
+          ? '今日未开始'
+          : `今日训练 ${completed.length}/${index.length} + 计划 ${planTasks.completed}/${planTasks.total}`,
         items,
       },
     }
@@ -144,6 +166,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     submissions: cell.submissions,
     tasks: { total: tasks.length, checked: tasks.length },
     training: { ...training, remaining: [] },
+    planTasks: { ...planTasks, remaining: [] },
     done: true,
     advice: {
       kind: 'extra',

@@ -36,8 +36,17 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       if (recentDiffs.length < 5) recentDiffs = store.getRecentAcDifficulties('1970-01-01')
       const level = estimateLevel(recentDiffs)
 
+      // 计划里今天已经指派了题的话，今日三档不再重复抽它们（否则 0/6 + 0/2 会重题）
+      const planKeys = new Set(
+        store.getTasksByDate(todayStr)
+          .filter((t) => t.problemKey && t.platform)
+          .map((t) => String(t.platform) + ':' + String(t.problemKey)),
+      )
+
       // 候选题
-      const candidates: CandidateProblem[] = store.getUnsolvedCandidates().map((p) => ({
+      const candidates: CandidateProblem[] = store.getUnsolvedCandidates()
+        .filter((p) => !planKeys.has(p.platform + ':' + p.problemKey))
+        .map((p) => ({
         id: p.id,
         platform: p.platform,
         problemKey: p.problemKey,
@@ -80,12 +89,16 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       const dueReviews = store.getDueCount()
       const tasks = store.getTasksByDate(todayStr)
       const checked = tasks.filter((t) => t.checked).length
+      const planProblems = tasks
+        .filter((t) => t.problemKey && t.platform)
+        .map((t) => ({ problemKey: t.problemKey, url: t.url ?? null, title: t.title }))
 
       return {
         ok: true,
         data: {
           date: todayStr, level, bands, dueReviews,
           focus: focus ? { week: focus.week, direction: focus.direction, tags: focus.tags } : null,
+          planProblems,
           planProgress: tasks.length > 0 ? { total: tasks.length, checked } : null,
         },
       }
