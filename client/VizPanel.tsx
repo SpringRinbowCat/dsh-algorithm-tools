@@ -1,0 +1,265 @@
+import { useState, type ReactNode } from 'react'
+
+export interface DayCell {
+  date: string
+  ac: number
+  submissions: number
+  tasks: number
+  checked: number
+  trainingTotal: number
+  trainingDone: number
+  done: boolean
+}
+
+export interface Overview {
+  ok: true
+  today: {
+    date: string
+    ac: number
+    submissions: number
+    tasks: { total: number; checked: number }
+    training: { total: number; completed: number; started: boolean; done: boolean }
+    done: boolean
+    advice: { kind: 'catchup' | 'extra'; title: string; items: string[] }
+  }
+  streak: { current: number; longest: number; totalDays: number }
+  days: DayCell[]
+}
+
+export interface Stats {
+  totals: { attempts: number; ac: number; acRate: number; solvedProblems: number; touched: number }
+  byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number }>
+  platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
+  weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number }>
+}
+
+const VIEWS = ['日历', '数据概览'] as const
+
+function levelOf(cell: DayCell): 0 | 1 | 2 | 3 {
+  if (cell.done && cell.tasks > 0) return 3
+  if (cell.ac >= 3) return 3
+  if (cell.ac >= 1) return 2
+  if (cell.submissions > 0) return 1
+  return 0
+}
+
+export interface VizPanelProps {
+  overview: Overview | null
+  stats: Stats | null
+  error?: string | null
+}
+
+export function VizPanel({ overview, stats, error = null }: VizPanelProps): ReactNode {
+  const [view, setView] = useState(0)
+
+  return (
+    <section className="icpc-viz">
+      <style>{CSS}</style>
+      <div className="icpc-viz__bar">
+        <button
+          type="button"
+          className="icpc-viz__arrow"
+          aria-label="上一个视图"
+          onClick={() => setView((v) => (v + VIEWS.length - 1) % VIEWS.length)}
+        >
+          ‹
+        </button>
+        <div className="icpc-viz__title">
+          <span>{VIEWS[view]}</span>
+          <i className="icpc-viz__dots">
+            {VIEWS.map((name, i) => (
+              <b key={name} className={i === view ? 'on' : ''} />
+            ))}
+          </i>
+        </div>
+        <button
+          type="button"
+          className="icpc-viz__arrow"
+          aria-label="下一个视图"
+          onClick={() => setView((v) => (v + 1) % VIEWS.length)}
+        >
+          ›
+        </button>
+      </div>
+
+      {error ? <div className="icpc-viz__error" role="alert">{error}</div> : null}
+      {!overview || !stats ? <div className="icpc-viz__loading">加载中…</div> : null}
+
+      {view === 0 && overview ? <CalendarView data={overview} /> : null}
+      {view === 1 && stats ? <StatsView data={stats} /> : null}
+    </section>
+  )
+}
+
+function CalendarView({ data }: { data: Overview }): ReactNode {
+  const t = data.today
+  const weeks: DayCell[][] = []
+  for (let i = 0; i < data.days.length; i += 7) weeks.push(data.days.slice(i, i + 7))
+  return (
+    <>
+      <div className="icpc-viz__head">
+        <div>
+          <div className="icpc-viz__state">
+            {t.done ? '今日训练已完成' : t.training.total === 0 ? '今日未开始' : '今日训练未完成'}
+          </div>
+          <div className="icpc-viz__meta">
+            训练 {t.training.completed}/{t.training.total} · 今天 AC {t.ac} 题（总） · 提交 {t.submissions}
+          </div>
+        </div>
+        <div className="icpc-viz__streak">
+          <span className="icpc-viz__num">{data.streak.current}</span>
+          <span className="icpc-viz__unit">连续天</span>
+        </div>
+      </div>
+
+      <div className={`icpc-viz__advice icpc-viz__advice--${t.advice.kind}`}>
+        <strong>{t.advice.title}</strong>
+        <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
+      </div>
+
+      <div className="icpc-viz__grid" title="最近 12 周：颜色越深 = 当天 AC 越多或计划已完成">
+        {weeks.map((week, wi) => (
+          <div className="icpc-viz__week" key={wi}>
+            {week.map((cell) => (
+              <div
+                key={cell.date}
+                className={`icpc-viz__cell icpc-viz__cell--${levelOf(cell)}`}
+                title={`${cell.date} · AC ${cell.ac} · 提交 ${cell.submissions}${cell.trainingTotal > 0 ? ` · 训练 ${cell.trainingDone}/${cell.trainingTotal}` : ''}${cell.tasks > 0 ? ` · 任务 ${cell.checked}/${cell.tasks}` : ''}`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div className="icpc-viz__legend">
+        <span>少</span>
+        <i className="icpc-viz__swatch icpc-viz__cell--0" />
+        <i className="icpc-viz__swatch icpc-viz__cell--1" />
+        <i className="icpc-viz__swatch icpc-viz__cell--2" />
+        <i className="icpc-viz__swatch icpc-viz__cell--3" />
+        <span>多</span>
+        <span className="icpc-viz__total">累计 {data.streak.totalDays} 天有 AC · 最长 {data.streak.longest} 天</span>
+      </div>
+    </>
+  )
+}
+
+function StatsView({ data }: { data: Stats }): ReactNode {
+  const t = data.totals
+  const items = data.byDifficulty.filter((d) => d.attempts > 0)
+  const total = items.reduce((sum, d) => sum + d.attempts, 0) || 1
+  const palette = ['#4ade80', '#60a5fa', '#f59e0b', '#f87171', '#a78bfa', '#f472b6', '#22d3ee', '#facc15']
+  const R = 38
+  const C = 2 * Math.PI * R
+  let offset = 0
+  const segs = items.map((d, i) => {
+    const pct = (d.attempts / total) * 100
+    const seg = { ...d, pct, color: palette[i % palette.length], offset }
+    offset += (pct / 100) * C
+    return seg
+  })
+
+  return (
+    <>
+      <div className="icpc-viz__numbers">
+        <div><b>{t.ac}</b><span>AC</span></div>
+        <div><b>{t.attempts}</b><span>提交</span></div>
+        <div><b>{t.acRate}%</b><span>AC 率</span></div>
+        <div><b>{t.solvedProblems}</b><span>已解决</span></div>
+      </div>
+
+      <div className="icpc-viz__section">难度分布（按提交量）</div>
+      <div className="icpc-viz__donutwrap">
+        <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="难度分布扇形图">
+          <circle cx="50" cy="50" r={R} fill="none" stroke="var(--dsw-alias-interactive-bg-hover)" strokeWidth="13" />
+          {segs.map((s) => (
+            <circle
+              key={s.bucket}
+              cx="50"
+              cy="50"
+              r={R}
+              fill="none"
+              stroke={s.color}
+              strokeWidth="13"
+              strokeDasharray={`${(s.pct / 100) * C} ${C}`}
+              strokeDashoffset={-s.offset}
+              transform="rotate(-90 50 50)"
+            />
+          ))}
+          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{total}</text>
+          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">次提交</text>
+        </svg>
+        <div className="icpc-viz__lglist">
+          {segs.map((s) => (
+            <div className="icpc-viz__lg" key={s.bucket} title={`${s.attempts} 次提交 · ${s.ac} 次 AC`}>
+              <i style={{ background: s.color }} />
+              <span className="icpc-viz__lgname">{s.bucket}</span>
+              <span className="icpc-viz__lgval">{Math.round(s.pct)}%</span>
+              <span className="icpc-viz__lgac">{s.acRate}% AC</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="icpc-viz__section">弱项（gap 越大越弱，相对你的平均 AC 率）</div>
+      <div className="icpc-viz__tags">
+        {data.weakTags.length === 0
+          ? <span className="icpc-viz__muted">样本还不够，多提交一些再看</span>
+          : data.weakTags.map((w) => (
+            <span className="icpc-viz__tag" key={w.tag} title={`${w.attempts} 次尝试 · AC 率 ${w.acRate}%`}>
+              {w.tag}<i>{w.gap.toFixed(1)}</i>
+            </span>
+          ))}
+      </div>
+    </>
+  )
+}
+
+const CSS = `
+.icpc-viz { padding: 8px 4px 14px; border-bottom: 1px solid var(--dsw-alias-border-l4); margin-bottom: 12px; }
+.icpc-viz__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.icpc-viz__title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.icpc-viz__dots { display: flex; gap: 4px; }
+.icpc-viz__dots b { width: 5px; height: 5px; border-radius: 50%; background: var(--dsw-alias-interactive-bg-hover); }
+.icpc-viz__dots b.on { background: var(--dsw-alias-label-secondary); }
+.icpc-viz__arrow { width: 24px; height: 24px; border: 1px solid var(--dsw-alias-border-l4); border-radius: 6px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; font-size: 14px; line-height: 1; }
+.icpc-viz__arrow:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); }
+.icpc-viz__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.icpc-viz__state { font-size: 13px; font-weight: 600; }
+.icpc-viz__meta { margin-top: 3px; font-size: 11px; color: var(--dsw-alias-label-caption); }
+.icpc-viz__streak { text-align: right; line-height: 1.1; }
+.icpc-viz__num { display: block; font-size: 20px; font-weight: 700; }
+.icpc-viz__unit { font-size: 10px; color: var(--dsw-alias-label-caption); }
+.icpc-viz__advice { margin-top: 10px; padding: 8px 10px; font-size: 12px; border-radius: 8px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); border: 1px solid var(--dsw-alias-border-l4); }
+.icpc-viz__advice--catchup { border-color: #d97706; }
+.icpc-viz__advice--extra { border-color: #16a34a; }
+.icpc-viz__advice ul { margin: 6px 0 0; padding-left: 16px; color: var(--dsw-alias-label-secondary); }
+.icpc-viz__grid { display: flex; gap: 3px; margin-top: 12px; overflow-x: auto; }
+.icpc-viz__week { display: grid; grid-template-rows: repeat(7, 10px); gap: 3px; }
+.icpc-viz__cell { width: 10px; height: 10px; border-radius: 2px; background: var(--dsw-alias-interactive-bg-hover); }
+.icpc-viz__cell--0 { background: var(--dsw-alias-interactive-bg-hover); }
+.icpc-viz__cell--1 { background: #bbf7d0; }
+.icpc-viz__cell--2 { background: #4ade80; }
+.icpc-viz__cell--3 { background: #15803d; }
+.icpc-viz__legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 10px; color: var(--dsw-alias-label-caption); }
+.icpc-viz__swatch { width: 10px; height: 10px; border-radius: 2px; }
+.icpc-viz__total { margin-left: auto; }
+.icpc-viz__numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+.icpc-viz__numbers div { padding: 8px 6px; text-align: center; border-radius: 8px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); }
+.icpc-viz__numbers b { display: block; font-size: 16px; }
+.icpc-viz__numbers span { font-size: 10px; color: var(--dsw-alias-label-caption); }
+.icpc-viz__section { margin-top: 12px; font-size: 11px; font-weight: 600; color: var(--dsw-alias-label-caption); }
+.icpc-viz__donutwrap { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.icpc-viz__donut { width: 96px; height: 96px; flex: none; color: var(--dsw-alias-label-primary); }
+.icpc-viz__lglist { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.icpc-viz__lg { display: grid; grid-template-columns: 8px 1fr auto auto; align-items: center; gap: 5px; font-size: 10px; }
+.icpc-viz__lg i { width: 8px; height: 8px; border-radius: 2px; }
+.icpc-viz__lgname { color: var(--dsw-alias-label-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icpc-viz__lgval { color: var(--dsw-alias-label-primary); }
+.icpc-viz__lgac { color: var(--dsw-alias-label-caption); }
+.icpc-viz__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.icpc-viz__tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; font-size: 10px; border-radius: 999px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); border: 1px solid var(--dsw-alias-border-l4); }
+.icpc-viz__tag i { font-style: normal; color: #d97706; }
+.icpc-viz__muted { font-size: 11px; color: var(--dsw-alias-label-caption); }
+.icpc-viz__loading, .icpc-viz__error { padding: 10px 4px; font-size: 12px; color: var(--dsw-alias-label-caption); }
+`
