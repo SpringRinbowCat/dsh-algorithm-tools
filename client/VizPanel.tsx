@@ -254,15 +254,15 @@ function CalendarView({ data }: { data: Overview }): ReactNode {
         <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
         {(t.planTasks.remaining.length > 0 || t.training.remaining.length > 0) ? (
           <div className="icpc-viz__left">
-            {t.planTasks.remaining.map((r) => (r.url
-              ? <a key={`p-${r.problemKey}`} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
-              : <span key={`p-${r.problemKey}`}>{r.problemKey}</span>))}
-            {t.planTasks.remaining.length > 0 && t.training.remaining.length > 0
-              ? <i className="icpc-viz__sep" aria-hidden="true" />
-              : null}
             {t.training.remaining.map((r) => (r.url
               ? <a key={r.problemKey} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
               : <span key={r.problemKey}>{r.problemKey}</span>))}
+            {t.planTasks.remaining.length > 0 && t.training.remaining.length > 0
+              ? <i className="icpc-viz__sep" aria-hidden="true" />
+              : null}
+            {t.planTasks.remaining.map((r) => (r.url
+              ? <a key={`p-${r.problemKey}`} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
+              : <span key={`p-${r.problemKey}`}>{r.problemKey}</span>))}
           </div>
         ) : null}
       </div>
