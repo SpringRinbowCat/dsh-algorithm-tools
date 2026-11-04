@@ -48,7 +48,7 @@ export function createBetterSidebarDescriptor(
 ): BetterSidebarTabDescriptorLike {
   return {
     id: BETTER_SIDEBAR_TAB_ID,
-    title: () => 'ICPC Workbench',
+    title: () => 'Algorithm Practice Space',
     description: () => '训练工作台',
     icon,
     order: 60,

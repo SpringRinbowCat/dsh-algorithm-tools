@@ -138,7 +138,7 @@ export function WorkbenchPanel({
           <Icon name="trophy" size={16} />
         </div>
         <div>
-          <h2>ICPC Workbench</h2>
+          <h2>Algorithm Practice Space</h2>
           <p>训练工作台 · v0.1.1</p>
         </div>
       </header>

@@ -89,7 +89,7 @@ function registerNativeSidebar(ctx: ClientCtx): () => void {
   disposers.push(ctx.effect(() => ctx.sidebarRightTabs.register({
     id: TAB_ID,
     kind: TAB_KIND,
-    title: () => 'ICPC Workbench',
+    title: () => 'Algorithm Practice Space',
   })))
   disposers.push(ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab', () =>
     ctx.slots.register(
@@ -142,7 +142,7 @@ function SettingsPanel(): unknown {
   return createElement(
     'div',
     { style: { padding: '16px', fontFamily: 'system-ui, -apple-system, sans-serif' } },
-    createElement('h2', { style: { margin: '0 0 8px 0', fontSize: '18px' } }, 'ICPC 训练台'),
+    createElement('h2', { style: { margin: '0 0 8px 0', fontSize: '18px' } }, 'Algorithm Practice Space'),
     createElement(
       'p',
       { style: { margin: '0 0 12px 0', fontSize: '13px', color: 'var(--dsw-alias-label-caption)' } },
