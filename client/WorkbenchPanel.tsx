@@ -139,7 +139,7 @@ export function WorkbenchPanel({
         </div>
         <div>
           <h2>ICPC Workbench</h2>
-          <p>训练工作台</p>
+          <p>训练工作台 · v0.1.1</p>
         </div>
       </header>
 
