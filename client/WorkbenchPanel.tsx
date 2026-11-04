@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { activateWorkbench } from './api.ts'
-import { VizPanel, type ContestItem, type Overview, type Stats } from './VizPanel.tsx'
+import { VizPanel, type ContestItem, type Overview, type PlanSnapshot, type Stats } from './VizPanel.tsx'
 import {
   FEATURE_GROUPS,
   WORKBENCH_FEATURES,
@@ -31,6 +31,7 @@ export function WorkbenchPanel({
   const [stats, setStats] = useState<Stats | null>(null)
   const [vizError, setVizError] = useState<string | null>(null)
   const [contests, setContests] = useState<ContestItem[] | null>(null)
+  const [plan, setPlan] = useState<PlanSnapshot | null>(null)
   const lastKickRef = useRef(0)
   const loadRef = useRef<() => void>(() => {})
 
@@ -41,8 +42,9 @@ export function WorkbenchPanel({
         fetch('/icpc-workbench/overview?days=84').then((r) => r.json()),
         fetch('/icpc-workbench/stats').then((r) => r.json()),
         fetch('/icpc-workbench/contests').then((r) => r.json()),
+        fetch('/icpc-workbench/plan').then((r) => r.json()),
       ])
-        .then(([o, s, c]: Array<{ ok?: boolean; error?: string } & Record<string, unknown>>) => {
+        .then(([o, s, c, pl]: Array<{ ok?: boolean; error?: string } & Record<string, unknown>>) => {
           if (!alive) return
           if (o?.ok) {
             setOverview(o as unknown as Overview)
@@ -62,6 +64,9 @@ export function WorkbenchPanel({
           if (s?.ok) setStats((s as unknown as { stats: Stats }).stats)
           if (Array.isArray((c as unknown as { contests?: ContestItem[] })?.contests)) {
             setContests((c as unknown as { contests: ContestItem[] }).contests)
+          }
+          if ((pl as unknown as { ok?: boolean })?.ok) {
+            setPlan((pl as unknown as { plan: PlanSnapshot }).plan)
           }
         })
         .catch((e: unknown) => {
@@ -138,7 +143,7 @@ export function WorkbenchPanel({
         </div>
       </header>
 
-      <VizPanel overview={overview} stats={stats} contests={contests} error={vizError} />
+      <VizPanel overview={overview} stats={stats} contests={contests} plan={plan} error={vizError} />
 
       {error ? <div className="icpc-workbench__error" role="alert">{error}</div> : null}
 

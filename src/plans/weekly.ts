@@ -162,6 +162,7 @@ export function buildWeeklyPlan(
       startDate,
       endDate: addDays(startDate, days - 1),
       source: 'template',
+      weeks: weeks.map((w) => ({ index: w.week, startDate: w.startDate, direction: w.direction, tags: w.tags })),
       tasks,
     },
   }

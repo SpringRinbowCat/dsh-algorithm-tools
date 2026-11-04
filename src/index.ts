@@ -22,6 +22,7 @@ import { registerActivationRoute } from './activation.ts'
 import { registerOverviewRoute } from './workbench-overview.ts'
 import { registerSyncRoute } from './workbench-sync.ts'
 import { registerContestsRoute } from './workbench-contests.ts'
+import { registerPlanRoute } from './workbench-plan.ts'
 
 export const name = 'dsh-algo-trainer'
 export const inject = ['tools', 'agents', 'webServer']
@@ -92,4 +93,5 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
   registerOverviewRoute(ctx, store)
   registerSyncRoute(ctx, host)
   registerContestsRoute(ctx, host)
+  registerPlanRoute(ctx, store)
 }

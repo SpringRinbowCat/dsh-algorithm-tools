@@ -42,6 +42,8 @@ export interface PlanRecord {
   rawPrompt?: string
   createdAt: string
   tasks: PlanTaskRecord[]
+  /** v4.1 每周方向：index 从 1 起，tags 是该周聚焦的弱项标签（供今日训练联动） */
+  weeks?: Array<{ index: number; startDate: string; direction: string; tags: string[] }>
 }
 
 export interface ReviewRecord {

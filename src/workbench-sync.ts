@@ -10,6 +10,7 @@ import type { PlatformId } from './types.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { syncPlatform, syncBank } from './tools/sync-helpers.ts'
 import { collectLocalReviews } from './reviews/collect.ts'
+import { buildTodayStatus, localDay } from './workbench-overview.ts'
 
 const THROTTLE_MS = 30 * 60 * 1000
 const FORCE_THROTTLE_MS = 5 * 60 * 1000
@@ -34,12 +35,14 @@ interface SyncSummary {
   synced: Array<{ platform: string; skipped: boolean; imported?: number; errors?: string[] }>
   bank: { platform: string; fetched: number; inserted: number } | null
   reviews: { added: number; localProblems: number } | null
+  /** 今日训练完成后自动勾选的计划任务数 */
+  autoChecked: number
   throttled: boolean
 }
 
 async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
   const settings = host.store.getSettings()
-  const summary: SyncSummary = { ok: true, synced: [], bank: null, reviews: null, throttled: false }
+  const summary: SyncSummary = { ok: true, synced: [], bank: null, reviews: null, autoChecked: 0, throttled: false }
   const now = Date.now()
   const threshold = force ? FORCE_THROTTLE_MS : THROTTLE_MS
 
@@ -77,6 +80,12 @@ async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
   // 本地 Codeforces 目录 → 复习库
   const reviews = collectLocalReviews(host.store)
   summary.reviews = { added: reviews.added, localProblems: reviews.localProblems }
+
+  // 今日训练已完成 → 自动勾掉当天的计划任务，避免计划与日历两套账
+  const today = localDay()
+  if (buildTodayStatus(host.store, today).done) {
+    summary.autoChecked = host.store.autoCheckPlanTasks(today)
+  }
 
   return summary
 }

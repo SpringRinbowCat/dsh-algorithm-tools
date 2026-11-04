@@ -64,6 +64,7 @@ export function pickBand(
   weakTags: string[],
   excludeIds: Set<number>,
   rotate = 0,
+  focusTags: string[] = [],
 ): { problems: TodayProblem[]; pool: number } {
   const inBand = candidates.filter(
     (c) =>
@@ -74,11 +75,13 @@ export function pickBand(
       c.difficulty <= band.max &&
       !excludeIds.has(c.id),
   )
+  const focus = new Set(focusTags)
   const ordered = inBand
-    .map((c) => ({ c, weak: weakOverlap(c.tags, weakTags) }))
+    .map((c) => ({ c, weak: weakOverlap(c.tags, weakTags), focus: c.tags.filter((t) => focus.has(t)) }))
     .sort(
       (a, b) =>
-        b.weak.length - a.weak.length ||
+        // 本周计划方向优先（权重高于泛化弱项），再按弱项命中数，再按离档位中心的距离
+        b.focus.length * 2 + b.weak.length - (a.focus.length * 2 + a.weak.length) ||
         Math.abs((a.c.difficulty ?? 0) - (band.center ?? 0)) -
           Math.abs((b.c.difficulty ?? 0) - (band.center ?? 0)) ||
         a.c.id - b.c.id,
@@ -87,7 +90,7 @@ export function pickBand(
   const picked = [...ordered.slice(start), ...ordered.slice(0, start)].slice(0, count)
   return {
     pool: inBand.length,
-    problems: picked.map(({ c, weak }) => ({
+    problems: picked.map(({ c, weak, focus: hit }) => ({
       id: c.id,
       platform: c.platform as TodayProblem['platform'],
       problemKey: c.problemKey,
@@ -95,7 +98,7 @@ export function pickBand(
       difficulty: c.difficulty,
       url: c.url,
       tags: c.tags,
-      weakTags: weak,
+      weakTags: hit.length > 0 ? [...new Set([...hit, ...weak])] : weak,
     })),
   }
 }

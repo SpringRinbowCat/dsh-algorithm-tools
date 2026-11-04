@@ -23,7 +23,20 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
       const startDate = str(args.startDate) ?? localDay()
       try {
         const built = buildWeeklyPlan(host.store, { days, startDate })
-        const plan = host.store.createPlan({ ...built.plan, tasks: built.plan.tasks.map((t) => ({ ...t, id: 0 })) })
+        const plan = host.store.createPlan({
+          ...built.plan,
+          // PlanInput 用 date，PlanRecord 用 taskDate，这里做一次边界转换
+          tasks: built.plan.tasks.map((t) => ({
+            id: 0,
+            taskDate: t.date,
+            title: t.title,
+            kind: t.kind,
+            platform: t.platform,
+            url: t.url ?? null,
+            note: t.note ?? null,
+            checked: false,
+          })),
+        })
         return {
           ok: true,
           planId: plan.id,

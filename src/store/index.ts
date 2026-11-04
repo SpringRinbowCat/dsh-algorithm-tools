@@ -465,6 +465,36 @@ export class IcpcStore {
     return this.state.plans.find((p) => p.id === id)
   }
 
+  /** 覆盖指定日期的计划（v4.1 每周方向用） */
+  getActivePlan(date: string): PlanRecord | undefined {
+    return this.state.plans.find((p) => p.startDate <= date && p.endDate >= date)
+  }
+
+  /** 当前周方向：第几周、方向文案、该周聚焦标签；没有计划或旧计划（无 weeks）返回 null */
+  currentFocus(date: string): { planId: number; week: number; direction: string; tags: string[] } | null {
+    const plan = this.getActivePlan(date)
+    if (!plan?.weeks?.length) return null
+    const start = new Date(`${plan.startDate}T00:00:00Z`).getTime()
+    const day = new Date(`${date}T00:00:00Z`).getTime()
+    const idx = Math.max(0, Math.floor((day - start) / 86_400_000 / 7))
+    const w = plan.weeks.find((x) => x.index === idx + 1) ?? plan.weeks[plan.weeks.length - 1]
+    return w ? { planId: plan.id, week: w.index, direction: w.direction, tags: w.tags } : null
+  }
+
+  /** 今日训练完成后，把当天的计划任务自动勾掉；返回勾选数量 */
+  autoCheckPlanTasks(date: string): number {
+    let n = 0
+    for (const plan of this.state.plans) {
+      for (const t of plan.tasks) {
+        if (t.taskDate !== date || t.checked) continue
+        t.checked = true
+        n++
+      }
+    }
+    if (n > 0) this.scheduleSave()
+    return n
+  }
+
   deletePlan(id: number): boolean {
     const idx = this.state.plans.findIndex((p) => p.id === id)
     if (idx < 0) return false

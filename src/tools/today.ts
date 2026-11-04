@@ -52,6 +52,10 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       const weakness = computeWeakness(rows, { minAttempts: 5, topN: 15 })
       const weakTags = weakness.items.filter((i) => i.gap > 0).map((i) => i.tag)
 
+      // 本周计划方向（v4.1）：命中的题优先
+      const focus = store.currentFocus(todayStr)
+      const focusTags = focus?.tags ?? []
+
       // 逐档选题
       const ranges = bandRanges(level)
       const rotate = num(args.rotate, 0, 0, 500)
@@ -59,7 +63,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       const bands = BAND_KEYS.map((key) => {
         const q = Number(args[key])
         const count = Number.isInteger(q) && q >= 0 && q <= 6 ? q : DEFAULT_COUNTS[key]
-        const picked = pickBand(candidates, ranges[key], count, weakTags, exclude, rotate)
+        const picked = pickBand(candidates, ranges[key], count, weakTags, exclude, rotate, focusTags)
         for (const p of picked.problems) exclude.add(p.id)
         return {
           key, label: ranges[key].label, description: ranges[key].description,
@@ -81,6 +85,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
         ok: true,
         data: {
           date: todayStr, level, bands, dueReviews,
+          focus: focus ? { week: focus.week, direction: focus.direction, tags: focus.tags } : null,
           planProgress: tasks.length > 0 ? { total: tasks.length, checked } : null,
         },
       }
