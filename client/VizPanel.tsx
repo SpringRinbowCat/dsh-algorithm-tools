@@ -252,19 +252,17 @@ function CalendarView({ data }: { data: Overview }): ReactNode {
       <div className={`icpc-viz__advice icpc-viz__advice--${t.advice.kind}`}>
         <strong>{t.advice.title}</strong>
         <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
-        {t.training.remaining.length > 0 ? (
+        {(t.planTasks.remaining.length > 0 || t.training.remaining.length > 0) ? (
           <div className="icpc-viz__left">
-            {t.training.remaining.map((r) => (r.url
-              ? <a key={r.problemKey} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
-              : <span key={r.problemKey}>{r.problemKey}</span>))}
-          </div>
-        ) : null}
-        {t.planTasks.remaining.length > 0 ? (
-          <div className="icpc-viz__left">
-            <i className="icpc-viz__grouplabel">计划</i>
             {t.planTasks.remaining.map((r) => (r.url
               ? <a key={`p-${r.problemKey}`} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
               : <span key={`p-${r.problemKey}`}>{r.problemKey}</span>))}
+            {t.planTasks.remaining.length > 0 && t.training.remaining.length > 0
+              ? <i className="icpc-viz__sep" aria-hidden="true" />
+              : null}
+            {t.training.remaining.map((r) => (r.url
+              ? <a key={r.problemKey} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
+              : <span key={r.problemKey}>{r.problemKey}</span>))}
           </div>
         ) : null}
       </div>
@@ -390,7 +388,7 @@ const CSS = `
 .icpc-viz__left a, .icpc-viz__left span { font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--dsw-alias-border-l4); text-decoration: none; color: var(--dsw-alias-label-primary); }
 .icpc-viz__left a:hover { background: var(--dsw-alias-interactive-bg-hover); text-decoration: underline; }
 .icpc-viz__left span { opacity: 0.6; }
-.icpc-viz__grouplabel { font-style: normal; font-size: 10px; color: var(--dsw-alias-label-caption); align-self: center; }
+.icpc-viz__sep { width: 1px; height: 12px; background: var(--dsw-alias-border-l4); align-self: center; margin: 0 2px; }
 .icpc-viz__grid { display: flex; gap: 3px; margin-top: 12px; overflow-x: auto; }
 .icpc-viz__week { display: grid; grid-template-rows: repeat(7, 10px); gap: 3px; }
 .icpc-viz__cell { width: 10px; height: 10px; border-radius: 2px; background: var(--dsw-alias-interactive-bg-hover); }

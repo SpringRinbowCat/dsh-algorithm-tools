@@ -6,7 +6,7 @@ import { scheduleNext, intervalDaysForStage } from '../reviews/schedule.ts'
 import { collectLocalReviews } from '../reviews/collect.ts'
 import { scanLocalProblems } from '../reviews/local.ts'
 import { localDay } from '../util/local-date.ts'
-import { buildReplay, recentContestIds, type ContestMeta } from '../analysis/replay.ts'
+import { buildReplay, recentContestIds, isFinalized, type ContestMeta } from '../analysis/replay.ts'
 
 async function contestMetaMap(host: IcpcHost): Promise<Map<number, ContestMeta>> {
   const map = new Map<number, ContestMeta>()
@@ -51,8 +51,10 @@ export function registerReviewTool(host: IcpcHost, ctx: Context): () => void {
         case 'contests': {
           const metas = await contestMetaMap(host)
           const ids = recentContestIds(store, 30)
-          const rows = ids.map((id) => {
-            const meta = metas.get(id) ?? { name: 'contest ' + id, startTimeIso: null, durationMinutes: 120 }
+          const rows = ids
+            .map((id) => ({ id, meta: metas.get(id) }))
+            .filter((x) => x.meta && isFinalized(x.meta))
+            .map(({ id, meta }) => {
             const r = buildReplay(store, id, meta)
             return {
               contestId: id, name: r.name, startAt: r.startAt,
@@ -67,7 +69,9 @@ export function registerReviewTool(host: IcpcHost, ctx: Context): () => void {
           const id = Number(args.contestId)
           if (!Number.isInteger(id)) return { ok: false, error: 'contestId 必填' }
           const metas = await contestMetaMap(host)
-          const meta = metas.get(id) ?? { name: 'contest ' + id, startTimeIso: null, durationMinutes: 120 }
+          const meta = metas.get(id)
+          if (!meta) return { ok: false, error: '未找到比赛 ' + id + ' 的赛程信息（contest.list 里没有）' }
+          if (!isFinalized(meta)) return { ok: false, error: '这场还没出分：赛后有 hack 环节，等系统测试结束再复盘' }
           const report = buildReplay(store, id, meta)
           // 本地赛事代码：按题号找到 .cpp，交给模型评估写法/复杂度
           const local = scanLocalProblems().problems.filter((p) => report.problems.some((x) => x.problemKey === p.problemKey))

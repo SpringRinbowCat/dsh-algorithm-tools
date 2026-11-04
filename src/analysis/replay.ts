@@ -30,6 +30,13 @@ export interface ReplayProblem {
   failReasons: string[]
 }
 
+/** 赛后 60 分钟（黑盒 hack + 系统测试）后才算「出分」，此前不允许复盘 */
+export function isFinalized(meta: ContestMeta, now = Date.now()): boolean {
+  if (!meta.startTimeIso) return false
+  const end = new Date(meta.startTimeIso).getTime() + meta.durationMinutes * 60_000
+  return now >= end + 60 * 60_000
+}
+
 export interface ReplayReport {
   contestId: number
   name: string
@@ -137,7 +144,8 @@ export function replayTagScores(store: IcpcStore, metaOf: (id: number) => Contes
   const raw = new Map<string, number>()
   for (const id of ids) {
     const meta = metaOf(id)
-    const report = buildReplay(store, id, meta ?? { name: `contest ${id}`, startTimeIso: null, durationMinutes: 120 })
+    if (!meta || !isFinalized(meta)) continue
+    const report = buildReplay(store, id, meta)
     for (const w of report.weakTags) raw.set(w.tag, (raw.get(w.tag) ?? 0) + w.weight)
   }
   const max = Math.max(1, ...raw.values())

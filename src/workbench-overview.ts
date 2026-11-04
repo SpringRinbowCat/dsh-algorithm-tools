@@ -139,7 +139,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     } else if (!training.done) {
       items.push(`今日训练还剩 ${left.length} 题`)
     }
-    if (!planDone) items.push(`计划任务还剩 ${planRemaining.length} 题：${planRemaining.map((p) => p.problemKey).join('、')}`)
+    if (!planDone) items.push(`今日周训练计划还剩 ${planRemaining.length} 题`)
     if (pending.length > 0) items.push(`未完成任务：${pending.slice(0, 3).map((t) => t.title).join('；')}`)
     if (unresolved.length > 0 && !training.done) items.push(`今天试过但没 AC：${unresolved.slice(0, 3).join('、')}`)
     return {
