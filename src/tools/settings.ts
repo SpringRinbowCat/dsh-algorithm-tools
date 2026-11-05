@@ -22,7 +22,7 @@ export function registerSettingsTool(host: IcpcHost, ctx: Context): () => void {
     parameters: {
       action: {
         type: 'string', required: true,
-        enum: ['get', 'set_account', 'set_ai', 'set_adapter', 'set_cookies', 'set_reminder'],
+        enum: ['get', 'set_account', 'set_ai', 'set_adapter', 'set_cookies', 'set_reminder', 'set_local_root'],
       },
       platform: { type: 'string', enum: ['codeforces', 'atcoder'] },
       handle: { type: 'string' },
@@ -34,6 +34,7 @@ export function registerSettingsTool(host: IcpcHost, ctx: Context): () => void {
       apiKey: { type: 'string' },
       model: { type: 'string' },
       time: { type: 'string', description: '提醒时间 HH:MM（set_reminder）' },
+      root: { type: 'string', description: '本地训练根目录，如 /Volumes/kingston/codeforces（set_local_root）' },
     },
     output: { schema: ANY_OUTPUT, render: (_a, v) => textOutput(v) },
     async execute(args) {
@@ -47,6 +48,7 @@ export function registerSettingsTool(host: IcpcHost, ctx: Context): () => void {
           return {
             ok: true,
             settings: {
+              localRoot: store.getLocalRoot(),
               accounts: s.accounts,
               adapterEnabled: s.adapterEnabled,
               reminder: s.reminder,
@@ -78,6 +80,12 @@ export function registerSettingsTool(host: IcpcHost, ctx: Context): () => void {
           if (typeof args.model === 'string') patch.model = args.model
           store.updateSettings({ ai: patch as never })
           return { ok: true, ai: store.getSettings().ai }
+        }
+
+        case 'set_local_root': {
+          const root = String(args.root ?? '').trim()
+          store.setLocalRoot(root)
+          return { ok: true, localRoot: root }
         }
 
         case 'set_adapter': {

@@ -172,6 +172,8 @@ export interface Context {
 export interface PluginConfig {
   /** 数据目录路径（存 JSON 状态文件）；留空则用 workspace 下 .icpc-data/ */
   dataDir: string
+  /** 本地题目根目录（如 /Volumes/kingston/codeforces）；留空则用默认扫描根 */
+  localRoot: string
   /** AI 配置（生成训练计划用） */
   ai: {
     enabled: boolean
@@ -200,6 +202,7 @@ export const Config = {
 export function resolveConfig(raw: Partial<PluginConfig> = {}): PluginConfig {
   return {
     dataDir: raw.dataDir ?? '',
+    localRoot: raw.localRoot ?? '',
     ai: {
       enabled: raw.ai?.enabled ?? false,
       baseURL: raw.ai?.baseURL ?? 'https://api.deepseek.com/v1',

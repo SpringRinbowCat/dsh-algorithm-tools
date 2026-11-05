@@ -22,6 +22,7 @@ import { registerActivationRoute } from './activation.ts'
 import { registerOverviewRoute } from './workbench-overview.ts'
 import { registerSyncRoute } from './workbench-sync.ts'
 import { registerContestsRoute } from './workbench-contests.ts'
+import { defaultLocalRoots } from './reviews/local.ts'
 import { registerPlanRoute } from './workbench-plan.ts'
 
 export const name = 'dsh-algo-trainer'
@@ -31,6 +32,8 @@ export { Config }
 export interface IcpcHost {
   store: IcpcStore
   adapters: Record<string, PlatformAdapter & ContestAdapter>
+  /** 本地题目根目录（例如 /Volumes/kingston/codeforces） */
+  localRoot: string
   getAiConfig: () => { enabled: boolean; baseURL: string; apiKey: string; model: string }
 }
 
@@ -68,6 +71,7 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
   )
 
   const store = new IcpcStore(nodeFs(), dataDir)
+  const localRoot = config.localRoot || defaultLocalRoots()[0] || ''
   // load() 已在构造器中启动；工具在 ready 之前注册无害（写盘已等待 ready）
 
   const adapters: Record<string, PlatformAdapter & ContestAdapter> = {
@@ -85,7 +89,7 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
     }
   }
 
-  const host: IcpcHost = { store, adapters, getAiConfig }
+  const host: IcpcHost = { store, adapters, localRoot, getAiConfig }
 
   ctx.effect(() => () => { void store.flush() })
 

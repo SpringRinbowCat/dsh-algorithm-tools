@@ -146,6 +146,16 @@ export class IcpcStore {
     return this.state.settings
   }
 
+  /** 本地题目根目录（训练目录同步用） */
+  getLocalRoot(): string {
+    return this.state.settings.localRoot ?? ''
+  }
+
+  setLocalRoot(root: string): void {
+    this.state.settings.localRoot = root.trim()
+    this.scheduleSave()
+  }
+
   updateSettings(patch: Partial<SettingsRecord>): void {
     if (patch.ai) this.state.settings.ai = { ...this.state.settings.ai, ...patch.ai }
     if (patch.adapterEnabled) this.state.settings.adapterEnabled = { ...this.state.settings.adapterEnabled, ...patch.adapterEnabled }
@@ -428,6 +438,11 @@ export class IcpcStore {
       if (p?.difficulty != null) diffs.push(p.difficulty)
     }
     return diffs
+  }
+
+  /** 按平台 + 题号查题目记录（今日训练锁定本地已有题目时用） */
+  getProblemByKey(platform: PlatformId, problemKey: string): ProblemRecord | null {
+    return this.state.problems.find((p) => p.platform === platform && p.problemKey === problemKey) ?? null
   }
 
   getUnsolvedCandidates(): Array<ProblemRecord & { id: number }> {

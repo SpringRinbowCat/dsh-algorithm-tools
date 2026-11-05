@@ -14,7 +14,7 @@ describe('better-sidebar adapter', () => {
     assert.equal(descriptor.single, true)
     assert.equal(descriptor.order, 60)
     assert.equal(typeof descriptor.title, 'function')
-    assert.equal(descriptor.title(), 'ICPC Workbench')
+    assert.equal(descriptor.title(), 'Algorithm Practice Space')
   })
 
   it('opens the tab for the requested session', () => {

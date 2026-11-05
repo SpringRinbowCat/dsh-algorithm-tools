@@ -107,6 +107,8 @@ export interface SettingsRecord {
     enabled: boolean
     time: string
   }
+  /** 本地题目根目录（如 /Volumes/kingston/codeforces）；留空则用插件配置或默认扫描根 */
+  localRoot?: string
 }
 
 /** 全部存储状态（一个 JSON 文件） */

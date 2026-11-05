@@ -152,7 +152,8 @@ describe('pickBand', () => {
       { id: 2, platform: 'codeforces', problemKey: '2A', title: 'B', difficulty: 1300, url: 'x', tags: ['dp'] },
     ]
     const bands = bandRanges(1500)
-    const result = pickBand(candidates, bands.consolidation, 1, ['dp'], new Set(), 0)
+    // 弱项分通过 tagScores 传进来（工具层用 weakness + replay 计算），这里直接给 dp 打 1 分
+    const result = pickBand(candidates, bands.consolidation, 1, ['dp'], new Set(), 0, [], new Map([['dp', 1]]))
     assert.equal(result.problems[0].id, 2) // weak-tagged one first
     assert.deepEqual(result.problems[0].weakTags, ['dp'])
   })
