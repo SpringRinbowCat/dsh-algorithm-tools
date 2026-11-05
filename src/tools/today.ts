@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -22,6 +23,20 @@ import {
 const DEFAULT_COUNTS: Record<TodayBandKey, number> = { consolidation: 2, core: 3, challenge: 1 }
 const BAND_KEYS: TodayBandKey[] = ['consolidation', 'core', 'challenge']
 const KEY_RE = /^(\d{3,6})([A-Z]\d?)$/
+
+/** 先跟远端对齐：多端共用同一份训练目录时，以仓库里的安排为准 */
+function gitPull(root: string): { pulled: boolean; message: string } {
+  if (!root || !fs.existsSync(path.join(root, '.git'))) {
+    return { pulled: false, message: 'not-a-git-repo' }
+  }
+  const r = spawnSync('git', ['-C', root, 'pull', '--rebase', '--autostash', '--quiet'], {
+    timeout: 20_000,
+    encoding: 'utf8',
+  })
+  if (r.error) return { pulled: false, message: r.error.message }
+  if (r.status !== 0) return { pulled: false, message: (r.stderr || '').trim().slice(0, 300) || `git exit ${r.status}` }
+  return { pulled: true, message: (r.stdout || '').trim().slice(0, 300) }
+}
 
 interface LocalProblem {
   problemKey: string
@@ -89,7 +104,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
     description:
       '获取今日三档训练推荐。能力值由「近 N 天刷题数据 + 近 N 天比赛数据」两路估算（不使用 rating），' +
       '按巩固区/同段区/挑战区推荐题目，弱项标签与比赛复盘命中优先。' +
-      '会先读当天目录：已经有题就按本地文件锁定，避免多设备各抽一套；并把今日训练写成同名 .md 一起同步。',
+      '会先 git pull 再读当天目录：已经有 .md 或题目就按已有安排锁定，避免多设备各抽一套；缺失时才生成并写入同名 .md。',
     parameters: {
       consolidation: { type: 'number', description: '巩固区题量（默认 2）' },
       core: { type: 'number', description: '同段区题量（默认 3）' },
@@ -172,8 +187,25 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
 
       // ---------- 先看本地当天目录 ----------
       const localRoot = store.getLocalRoot() || host.localRoot
+
+      // 多端一致：先把远端拉到本地，再看今天是否已经有远端安排的 .md
+      const sync = gitPull(localRoot)
+      const dayDir = path.join(localRoot, 'practice', todayStr)
+      const mdFile = path.join(dayDir, `${todayStr}.md`)
+      const remoteScheduled = fs.existsSync(mdFile)
       const local = listDayProblems(localRoot, todayStr)
-      const locked = local.problems.length > 0
+
+      // md 里有安排但对应 .cpp 还没 checkout 时，从 md 的题号链接里把安排读出来
+      if (remoteScheduled && local.problems.length === 0) {
+        try {
+          const md = fs.readFileSync(mdFile, 'utf8')
+          const keys = [...md.matchAll(/\[(\d{3,6}[A-Z]\d?)\]/g)].map((m) => m[1]!)
+          for (const key of new Set(keys)) local.problems.push({ problemKey: key, platform: 'codeforces' })
+        } catch {
+          // 读不出来就按本地文件为准
+        }
+      }
+      const locked = local.problems.length > 0 || remoteScheduled
 
       let bands: Array<{
         key: TodayBandKey
@@ -249,9 +281,9 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       if (indexed.length > 0) store.setTrainingIndex(todayStr, indexed)
 
       // ---------- 写下今日训练 .md（随仓库同步） ----------
-      const mdPath = path.join(local.dir, `${todayStr}.md`)
+      const mdPath = mdFile
       let mdWritten = false
-      try {
+      if (!remoteScheduled) try {
         fs.mkdirSync(local.dir, { recursive: true })
         fs.writeFileSync(
           mdPath,
@@ -270,7 +302,6 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       } catch { /* 磁盘不可写时不影响推荐结果 */ }
 
       // 到期复习 + 计划进度
-      const dueReviews = store.getDueCount()
       const tasks = store.getTasksByDate(todayStr)
       const checked = tasks.filter((t) => t.checked).length
       const planProblems = tasks
@@ -290,10 +321,11 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
             contestCount: levelInfo.contestCount,
           },
           locked,
-          mdPath: mdWritten ? mdPath : null,
+          scheduledBy: remoteScheduled ? 'remote' : 'local',
+          gitSync: sync,
+          mdPath: remoteScheduled ? mdPath : (mdWritten ? mdPath : null),
           bands: bands.map((b) => ({ ...b, problems: b.problems.map(({ reason, ...rest }) => rest) })),
           bandReasons: bands.flatMap((b) => b.problems.map((p) => ({ problemKey: p.problemKey, reason: p.reason }))),
-          dueReviews,
           focus: focus ? { week: focus.week, direction: focus.direction, tags: focus.tags } : null,
           planProblems,
           planProgress: tasks.length > 0 ? { total: tasks.length, checked } : null,

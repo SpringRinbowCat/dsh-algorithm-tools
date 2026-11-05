@@ -172,7 +172,6 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
       title: '今日训练完成，可以加训',
       items: [
         `今天 AC 了 ${cell.ac} 题（含训练外），可以再从「今日训练」换一批挑战题`,
-        unresolved.length > 0 ? `顺手把没 AC 的 ${unresolved.slice(0, 3).join('、')} 加进复习库` : '把今天的新题型加进复习库（icpc_review add）',
       ],
     },
   }

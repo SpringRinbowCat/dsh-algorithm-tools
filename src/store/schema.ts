@@ -46,21 +46,6 @@ export interface PlanRecord {
   weeks?: Array<{ index: number; startDate: string; direction: string; tags: string[] }>
 }
 
-export interface ReviewRecord {
-  id: number
-  platform: PlatformId
-  problemKey: string
-  title: string
-  difficulty: number | null
-  url: string | null
-  tags: string[]
-  stage: number
-  note: string | null
-  nextDueOn: string
-  lastReviewedAt: string | null
-  addedAt: string
-}
-
 export interface TemplateProgressRecord {
   templateId: string
   status: 'todo' | 'learning' | 'mastered'
@@ -116,7 +101,6 @@ export interface StoreState {
   problems: ProblemRecord[]
   submissions: SubmissionRecord[]
   plans: PlanRecord[]
-  reviews: ReviewRecord[]
   templateProgress: TemplateProgressRecord[]
   customTemplates: CustomTemplateRecord[]
   settings: SettingsRecord

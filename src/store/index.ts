@@ -10,7 +10,6 @@ import type {
   SubmissionRecord,
   PlanRecord,
   PlanTaskRecord,
-  ReviewRecord,
   TemplateProgressRecord,
   CustomTemplateRecord,
   SettingsRecord,
@@ -120,9 +119,6 @@ export class IcpcStore {
       for (const t of p.tasks) {
         if (t.id >= this.nextTaskId) this.nextTaskId = t.id + 1
       }
-    }
-    for (const r of this.state.reviews) {
-      if (r.id >= this.nextReviewId) this.nextReviewId = r.id + 1
     }
     for (const c of this.state.customTemplates) {
       if (c.id >= this.nextCustomId) this.nextCustomId = c.id + 1
@@ -640,65 +636,6 @@ export class IcpcStore {
     let current = 0
     while (set.has(cursor)) { current++; cursor-- }
     return { current, longest, totalDays: days.length }
-  }
-
-  // ---------- Reviews ----------
-
-  addReview(problem: ProblemRecord): ReviewRecord {
-    const todayStr = localDay()
-    const existing = this.state.reviews.find(
-      (r) => r.platform === problem.platform && r.problemKey === problem.problemKey,
-    )
-    if (existing) return existing
-    const record: ReviewRecord = {
-      id: this.nextReviewId++,
-      platform: problem.platform,
-      problemKey: problem.problemKey,
-      title: problem.title,
-      difficulty: problem.difficulty,
-      url: problem.url,
-      tags: problem.tags,
-      stage: 0,
-      note: null,
-      nextDueOn: todayStr,
-      lastReviewedAt: null,
-      addedAt: new Date().toISOString(),
-    }
-    this.state.reviews.push(record)
-    this.scheduleSave()
-    return record
-  }
-
-  listReviews(dueOnly = false): ReviewRecord[] {
-    const todayStr = localDay()
-    return [...this.state.reviews]
-      .filter((r) => !dueOnly || r.nextDueOn <= todayStr)
-      .sort((a, b) => a.nextDueOn.localeCompare(b.nextDueOn))
-  }
-
-  getReview(id: number): ReviewRecord | undefined {
-    return this.state.reviews.find((r) => r.id === id)
-  }
-
-  updateReview(id: number, patch: Partial<ReviewRecord>): boolean {
-    const r = this.getReview(id)
-    if (!r) return false
-    Object.assign(r, patch)
-    this.scheduleSave()
-    return true
-  }
-
-  deleteReview(id: number): boolean {
-    const idx = this.state.reviews.findIndex((r) => r.id === id)
-    if (idx < 0) return false
-    this.state.reviews.splice(idx, 1)
-    this.scheduleSave()
-    return true
-  }
-
-  getDueCount(): number {
-    const todayStr = localDay()
-    return this.state.reviews.filter((r) => r.nextDueOn <= todayStr).length
   }
 
   // ---------- Template Progress ----------

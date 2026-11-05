@@ -73,7 +73,6 @@ export interface TodayPlan {
   date: string
   level: number
   bands: TodayBand[]
-  dueReviews: number
   planProgress: { total: number; checked: number } | null
 }
 

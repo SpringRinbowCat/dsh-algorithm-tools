@@ -6,7 +6,6 @@ import { computeWeakness } from '../src/analysis/weakness.ts'
 import { getWeekKey, computeTrend } from '../src/analysis/trend.ts'
 import { filterNoiseTags, isNoiseTag } from '../src/analysis/tags.ts'
 import { estimateLevel, bandRanges, pickBand, type CandidateProblem } from '../src/analysis/today.ts'
-import { scheduleNext, nextStage, intervalDaysForStage, MAX_STAGE } from '../src/reviews/schedule.ts'
 import { parsePlanJson } from '../src/plans/planService.ts'
 
 function row(platform: string, verdict: string, submittedAt: string, problemKey: string, difficulty: number | null, tags: string[] = []): SubmissionRow {
@@ -156,37 +155,6 @@ describe('pickBand', () => {
     const result = pickBand(candidates, bands.consolidation, 1, ['dp'], new Set(), 0, [], new Map([['dp', 1]]))
     assert.equal(result.problems[0].id, 2) // weak-tagged one first
     assert.deepEqual(result.problems[0].weakTags, ['dp'])
-  })
-})
-
-describe('scheduleNext', () => {
-  it('hard resets to stage 0', () => {
-    const r = scheduleNext(3, 'hard', '2026-01-01')
-    assert.equal(r.stage, 0)
-    assert.equal(r.nextDueOn, '2026-01-02')
-  })
-  it('ok advances one stage', () => {
-    const r = scheduleNext(0, 'ok', '2026-01-01')
-    assert.equal(r.stage, 1)
-    assert.equal(r.nextDueOn, '2026-01-04') // 3 days
-  })
-  it('easy advances two stages', () => {
-    const r = scheduleNext(0, 'easy', '2026-01-01')
-    assert.equal(r.stage, 2)
-    assert.equal(r.nextDueOn, '2026-01-08') // 7 days
-  })
-  it('caps at MAX_STAGE', () => {
-    assert.equal(nextStage(MAX_STAGE, 'easy'), MAX_STAGE)
-    assert.equal(nextStage(MAX_STAGE, 'ok'), MAX_STAGE)
-  })
-})
-
-describe('intervalDaysForStage', () => {
-  it('returns correct interval for each stage', () => {
-    assert.equal(intervalDaysForStage(0), 1)
-    assert.equal(intervalDaysForStage(1), 3)
-    assert.equal(intervalDaysForStage(5), 60)
-    assert.equal(intervalDaysForStage(99), 60) // clamped
   })
 })
 

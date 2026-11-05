@@ -22,7 +22,7 @@ import { registerActivationRoute } from './activation.ts'
 import { registerOverviewRoute } from './workbench-overview.ts'
 import { registerSyncRoute } from './workbench-sync.ts'
 import { registerContestsRoute } from './workbench-contests.ts'
-import { defaultLocalRoots } from './reviews/local.ts'
+import { defaultLocalRoots } from './util/local-scan.ts'
 import { registerPlanRoute } from './workbench-plan.ts'
 
 export const name = 'dsh-algo-trainer'
