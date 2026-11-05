@@ -31,8 +31,14 @@ interface DayMdEntry {
   reason: string
 }
 
+interface DayMdBandRange {
+  min: number | null
+  max: number | null
+}
+
 /** 解析 practice/<日期>/<日期>.md：保留原分档和选题理由（md 是远端安排的真相） */
-function parseDayMd(md: string): DayMdEntry[] {
+function parseDayMd(md: string): { entries: DayMdEntry[]; ranges: Map<TodayBandKey, DayMdBandRange> } {
+  const mdRanges = new Map<TodayBandKey, DayMdBandRange>()
   const labelToKey: Record<string, TodayBandKey> = {
     巩固区: 'consolidation',
     同段区: 'core',
@@ -41,16 +47,21 @@ function parseDayMd(md: string): DayMdEntry[] {
   const out: DayMdEntry[] = []
   let band: TodayBandKey | null = null
   for (const line of md.split('\n')) {
-    const head = /^##\s*(巩固区|同段区|挑战区)/.exec(line)
+    const head = /^##\s*(巩固区|同段区|挑战区)\s*[（(]?\s*(\d+)?\s*[–\-~]?\s*(\d+)?\s*[）)]?/.exec(line)
     if (head) {
       band = labelToKey[head[1]!] ?? null
+      if (band) {
+        const lo = head[2] ? Number(head[2]) : null
+        const hi = head[3] ? Number(head[3]) : null
+        if (lo !== null && hi !== null) mdRanges.set(band, { min: lo, max: hi })
+      }
       continue
     }
     if (!band) continue
     const row = /^\|\s*\[(\d{3,6}[A-Z]\d?)\]\(([^)]+)\)\s*\|([^|]*)\|([^|]*)\|([^|]*)\|/.exec(line)
     if (row) out.push({ band, problemKey: row[1]!, reason: (row[5] ?? '').trim() })
   }
-  return out
+  return { entries: out, ranges: mdRanges }
 }
 
 interface LocalProblem {
@@ -212,7 +223,10 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
 
       // md 里有安排但对应 .cpp 还没 checkout 时，从 md 的题号链接里把安排读出来
       // 远端 md 是安排的唯一真相：题目集合和分档都以它为准
-      const mdEntries = remoteScheduled ? parseDayMd(fs.readFileSync(mdFile, 'utf8')) : []
+      const parsedMd = remoteScheduled
+        ? parseDayMd(fs.readFileSync(mdFile, 'utf8'))
+        : { entries: [] as DayMdEntry[], ranges: new Map<TodayBandKey, DayMdBandRange>() }
+      const mdEntries = parsedMd.entries
       if (mdEntries.length > 0 && local.problems.length === 0) {
         for (const e of mdEntries) local.problems.push({ problemKey: e.problemKey, platform: 'codeforces' })
       }
@@ -232,7 +246,11 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
         const groups: Record<TodayBandKey, TodayMdProblem[]> = { consolidation: [], core: [], challenge: [] }
         const mdBandOf = new Map(mdEntries.map((e) => [e.problemKey, e.band]))
         const mdReasonOf = new Map(mdEntries.map((e) => [e.problemKey, e.reason]))
-        for (const item of local.problems) {
+        // md 里列了几题就用几题（本地 .cpp 只是其中已开工的部分）
+        const items: LocalProblem[] = mdEntries.length > 0
+          ? mdEntries.map((e) => ({ problemKey: e.problemKey, platform: 'codeforces' as const }))
+          : local.problems
+        for (const item of items) {
           const rec = store.getProblemByKey(item.platform, item.problemKey)
           const p = {
             id: rec ? store.state.problems.indexOf(rec) + 1 : 0,
@@ -255,7 +273,10 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
           key,
           label: ranges[key].label,
           description: ranges[key].description,
-          range: [ranges[key].min, ranges[key].max] as [number | null, number | null],
+          range: ((): [number | null, number | null] => {
+            const mdRange = parsedMd.ranges.get(key)
+            return mdRange ? [mdRange.min, mdRange.max] : [ranges[key].min, ranges[key].max]
+          })(),
           problems: groups[key].sort((a, b) => (a.difficulty ?? 0) - (b.difficulty ?? 0)),
           pool: groups[key].length,
         }))
