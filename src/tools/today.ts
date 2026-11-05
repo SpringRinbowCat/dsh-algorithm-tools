@@ -9,6 +9,7 @@ import { textOutput, ANY_OUTPUT, num } from './helpers.ts'
 import { computeWeakness } from '../analysis/weakness.ts'
 import { localDay } from '../util/local-date.ts'
 import { gitCommitPush, gitPullForceRemote } from '../util/git.ts'
+import { syncPlatform } from './sync-helpers.ts'
 import { contestIdOf, replayTagScores, type ContestMeta } from '../analysis/replay.ts'
 import {
   bandForDifficulty,
@@ -149,6 +150,19 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       // 题目难度索引（比赛侧也要用）
       const difficulties = new Map<string, number | null>()
       for (const p of store.state.problems) difficulties.set(`${p.platform}:${p.problemKey}`, p.difficulty)
+
+      // 进度以 Codeforces 官方判定为准：超过 10 分钟没同步就增量拉一次提交
+      const REFRESH_MS = 10 * 60_000
+      let refreshed: { imported: number } | null = null
+      try {
+        const account = store.getAccount('codeforces')
+        const last = account?.lastSyncAt ? Date.parse(account.lastSyncAt) : 0
+        if (account?.handle && (!last || Date.now() - last > REFRESH_MS)) {
+          const r = await syncPlatform(host, 'codeforces', account.handle)
+          refreshed = { imported: r.imported }
+          await store.flush()
+        }
+      } catch { /* 拉不到就按已有数据算，不影响出题 */ }
 
       // ---------- 能力值：刷题 + 比赛 两路 ----------
       let practiceDiffs = store.getRecentAcDifficulties(since)
@@ -356,6 +370,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
         data: {
           date: todayStr,
           level,
+          refreshedFromCf: refreshed,
           sources: {
             windowDays,
             practiceLevel: levelInfo.practiceLevel,
