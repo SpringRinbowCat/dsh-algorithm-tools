@@ -51,7 +51,7 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     label: '训练计划',
     description: '查看、生成与打卡',
     icon: 'plans',
-    prompt: '请调用 icpc_manage_plan 工具列出我的训练计划；如果没有计划，再询问我计划天数并准备生成。',
+    prompt: '从远端 taskList 目录列出我的训练计划；如果没有计划，调用 icpc_generate_plan 以 14 天为周期生成一个系统化训练计划（生成后用 icpc_manage_plan 确认并同步到远端）。',
   },
   {
     id: 'reviews',
