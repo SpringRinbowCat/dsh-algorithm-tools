@@ -4,6 +4,8 @@ import type { Context, ToolDefinition } from '../dsh-compat.ts'
 import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT } from './helpers.ts'
 import { syncPlatform, syncBank } from './sync-helpers.ts'
+import { gitPull } from '../util/git.ts'
+import { syncPlansFromFiles } from '../plans/taskList.ts'
 
 export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
   return ctx.tools.register(defineTool({
@@ -30,6 +32,10 @@ export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
     output: { schema: ANY_OUTPUT, render: (_a, v) => textOutput(v) },
     async execute(args) {
       const { store, adapters } = host
+      // 同步也顺带对齐计划文件：先 pull，再把 taskList 灌进本地 state
+      const root = store.getLocalRoot() || host.localRoot
+      const pull = gitPull(root)
+      const plans = syncPlansFromFiles(store, root)
       const platform = args.platform as string
       const wantBank = args.bank === true
       const bankTargets = Object.keys(adapters)
@@ -51,7 +57,8 @@ export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
           return { ok: false, error: '没有已绑定的启用账号，请先通过 icpc_settings 绑定平台账号' }
         }
         await store.flush()
-        return { ok: true, results, ...(banks.length > 0 ? { banks } : {}) }
+        await store.flush()
+        return { ok: true, results, ...(banks.length > 0 ? { banks } : {}), git: { pull, plans } }
       }
 
       if (platform !== 'codeforces' && platform !== 'atcoder') {
@@ -64,7 +71,7 @@ export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
         return { ok: false, error: `未提供 handle 且没有已绑定的 ${platform} 账号` }
       }
 
-      const out: Record<string, unknown> = { ok: true }
+      const out: Record<string, unknown> = { ok: true, git: { pull, plans } }
       if (handle) out.result = await syncPlatform(host, platform, handle)
       if (wantBank) out.bank = await syncBank(host, platform)
       // 显式落盘：别依赖 500ms 防抖，退出/重启时数据才不会丢

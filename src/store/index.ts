@@ -493,6 +493,20 @@ export class IcpcStore {
     return [...this.state.plans].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   }
 
+  /** 按起始日期找计划（taskList 文件同步用） */
+  findPlanByStartDate(startDate: string): PlanRecord | undefined {
+    return this.state.plans.find((p) => p.startDate === startDate)
+  }
+
+  /** 用文件里的任务整体替换本地计划任务（保留 plan id） */
+  replacePlanTasks(planId: number, tasks: Array<Omit<PlanTaskRecord, 'id'>>): boolean {
+    const plan = this.getPlan(planId)
+    if (!plan) return false
+    plan.tasks = tasks.map((t) => ({ ...t, id: this.nextTaskId++ }))
+    this.scheduleSave()
+    return true
+  }
+
   getPlan(id: number): PlanRecord | undefined {
     return this.state.plans.find((p) => p.id === id)
   }

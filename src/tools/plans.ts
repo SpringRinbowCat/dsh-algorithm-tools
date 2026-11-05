@@ -8,6 +8,15 @@ import { localDay } from '../workbench-overview.ts'
 import type { TaskKind } from '../types.ts'
 
 export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
+  // 计划文件 → 远端：只提交 taskList/ 下的文件，不碰题目代码
+  const persist = (store: typeof host.store, message: string) => {
+    const root = store.getLocalRoot() || host.localRoot
+    if (!root) return { ok: false, message: 'no-root' }
+    const plans = store.listPlans()
+    for (const p of plans) writePlanFromRecord(root, p)
+    return gitCommitPush(root, plans.map((p) => taskFileRel(p.startDate)), message)
+  }
+
   const disposeGenerate = ctx.tools.register(defineTool({
     name: 'icpc_generate_plan',
     description:
@@ -21,6 +30,32 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
     async execute(args) {
       const days = num(args.days, 14, 1, 90)
       const startDate = str(args.startDate) ?? localDay()
+      const root = host.store.getLocalRoot() || host.localRoot
+      // 远端优先：先拉，再看 taskList/<startDate>.json 是否已有安排
+      const pull = gitPull(root)
+      const remotePlan = readPlanFile(root, startDate)
+      if (remotePlan) {
+        const existing = host.store.findPlanByStartDate(startDate)
+        if (existing) host.store.replacePlanTasks(existing.id, remotePlan.tasks.map((t) => ({ ...t, id: 0 })))
+        const plan = existing ?? host.store.createPlan({
+          title: remotePlan.title,
+          goal: remotePlan.goal,
+          startDate: remotePlan.startDate,
+          endDate: remotePlan.endDate,
+          source: remotePlan.source,
+          weeks: remotePlan.weeks,
+          tasks: remotePlan.tasks.map((t) => ({ ...t, id: 0 })),
+        })
+        return {
+          ok: true,
+          planId: plan.id,
+          title: remotePlan.title,
+          goal: remotePlan.goal,
+          taskCount: remotePlan.tasks.length,
+          scheduledBy: 'remote',
+          gitSync: pull,
+        }
+      }
       try {
         const built = buildWeeklyPlan(host.store, { days, startDate })
         const plan = host.store.createPlan({
@@ -38,6 +73,7 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
             checked: false,
           })),
         })
+        const pushed = persist(host.store, `chore(taskList): 生成 ${startDate} 训练计划`)
         return {
           ok: true,
           planId: plan.id,
@@ -46,6 +82,8 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
           level: built.level,
           weeks: built.weeks,
           taskCount: plan.tasks.length,
+          scheduledBy: 'local',
+          gitSync: { ...pull, push: pushed },
         }
       } catch (e) {
         return { ok: false, error: (e as Error).message }
@@ -116,20 +154,26 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
           if (!Number.isInteger(taskId)) return { ok: false, error: 'taskId 必填' }
           if (!store.findTask(taskId)) return { ok: false, error: '任务不存在' }
           store.toggleCheckin(taskId, true)
-          return { ok: true }
+          return { ok: true, gitSync: persist(store, 'chore(taskList): 打卡') }
         }
 
         case 'uncheck': {
           const taskId = Number(args.taskId)
           if (!Number.isInteger(taskId)) return { ok: false, error: 'taskId 必填' }
           store.toggleCheckin(taskId, false)
-          return { ok: true }
+          return { ok: true, gitSync: persist(store, 'chore(taskList): 取消打卡') }
         }
 
         case 'delete': {
           const id = Number(args.planId)
           if (!Number.isInteger(id)) return { ok: false, error: 'planId 必填' }
-          return store.deletePlan(id) ? { ok: true } : { ok: false, error: '计划不存在' }
+          const target = store.getPlan(id)
+          if (!target) return { ok: false, error: '计划不存在' }
+          const root = store.getLocalRoot() || host.localRoot
+          removePlanFile(root, target.startDate)
+          const gone = store.deletePlan(id)
+          const sync = persist(store, `chore(taskList): 删除计划 ${target.startDate}`)
+          return { ok: gone, gitSync: sync }
         }
 
         case 'import': {
@@ -149,7 +193,8 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
                 url: t.url ?? null, note: t.note ?? null, checked: false,
               })),
             })
-            return { ok: true, planId: plan.id, title: plan.title, taskCount: plan.tasks.length }
+            const sync = persist(store, `chore(taskList): 导入计划 ${sd}`)
+            return { ok: true, planId: plan.id, title: plan.title, taskCount: plan.tasks.length, gitSync: sync }
           } catch (e) {
             return { ok: false, error: `导入失败：${(e as Error).message}` }
           }
@@ -178,13 +223,16 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
           if (args.note !== undefined) patch.note = typeof args.note === 'string' && args.note.trim() ? args.note.trim() : null
           if (Object.keys(patch).length === 0) return { ok: false, error: '没有可更新字段' }
           store.updateTask(taskId, patch as never)
-          return { ok: true }
+          return { ok: true, gitSync: persist(store, 'chore(taskList): 修改任务') }
         }
 
         case 'delete_task': {
           const taskId = Number(args.taskId)
           if (!Number.isInteger(taskId)) return { ok: false, error: 'taskId 必填' }
-          return store.deleteTask(taskId) ? { ok: true } : { ok: false, error: '任务不存在' }
+          const done = store.deleteTask(taskId)
+          return done
+            ? { ok: true, gitSync: persist(store, 'chore(taskList): 删除任务') }
+            : { ok: false, error: '任务不存在' }
         }
 
         default:
