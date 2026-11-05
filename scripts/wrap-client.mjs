@@ -14,7 +14,7 @@
  *   - 尾部 `export { a, b, c };` → 捕获名字并移除
  *   - 内联 `export const x` / `export function x` → 剥掉 export 关键字并捕获名字
  */
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { build } from 'esbuild'
@@ -22,7 +22,9 @@ import { build } from 'esbuild'
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
 const CLIENT_ENTRY = join(ROOT, 'client', 'index.ts')
 const CLIENT_BUNDLE = join(ROOT, 'lib', 'client.mjs')
-const PLUGIN_ID = 'dsh-algo-trainer'
+// 客户端插件注册 id 必须等于 package.json 的 name，否则改名后浏览器端会注册不上
+const pkg = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))
+const PLUGIN_ID = pkg.name
 
 const result = await build({
   entryPoints: [CLIENT_ENTRY],
