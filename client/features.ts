@@ -43,7 +43,7 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     label: '今日训练',
     description: '巩固、同段与挑战题',
     icon: 'today',
-    prompt: '请调用 icpc_today 工具，给我今天的三档训练推荐并说明选题理由。',
+    prompt: '获取远端今日训练题目，如远端无题目文档，调用 icpc_today 获取训练并同步至日历，将文档推送到远端',
   },
   {
     id: 'plans',
