@@ -43,7 +43,7 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 
 1. `git rebase --abort` / `merge --abort`，不让仓库卡在冲突状态
 2. 只把「安排类」路径强制对齐远端（`practice/<日期>/<日期>.md` 或 `taskList/`）
-3. 题目代码（`*.cpp`）不动，不会被覆盖
+3. **题目代码（`*.cpp`）也一起按远端覆盖**（先 `git diff --name-only <upstream> -- practice taskList` 找出差异文件，只覆盖这些，不动其他）
 4. 对齐后立即同步进面板（今日训练索引 / 计划列表），不需要再问
 
 ## 今日训练怎么算

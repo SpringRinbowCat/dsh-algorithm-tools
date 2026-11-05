@@ -50,8 +50,19 @@ export function gitPullForceRemote(
   })
   const upstream = (up.stdout || '').trim() || 'origin/main'
 
+  // 先找出和远端有差异的「训练相关」路径（含题目代码），逐个用远端版本覆盖
+  const scope = ['practice', 'taskList']
+  const diff = spawnSync('git', ['-C', root, 'diff', '--name-only', upstream, '--', ...scope], {
+    timeout,
+    encoding: 'utf8',
+  })
+  const targets = new Set<string>([
+    ...relPaths,
+    ...(diff.stdout || '').split('\n').map((l) => l.trim()).filter(Boolean),
+  ])
+
   const forced: string[] = []
-  for (const rel of relPaths) {
+  for (const rel of targets) {
     const r = spawnSync('git', ['-C', root, 'checkout', upstream, '--', rel], { timeout, encoding: 'utf8' })
     if (r.status === 0) forced.push(rel)
   }
