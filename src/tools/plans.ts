@@ -5,6 +5,13 @@ import { textOutput, ANY_OUTPUT, num, str } from './helpers.ts'
 import { parsePlanJson, today, addDays, TASK_KINDS } from '../plans/planService.ts'
 import { buildWeeklyPlan } from '../plans/weekly.ts'
 import { localDay } from '../workbench-overview.ts'
+import { gitCommitPush, gitPull } from '../util/git.ts'
+import {
+  readPlanFile,
+  removePlanFile,
+  taskFileRel,
+  writePlanFromRecord,
+} from '../plans/taskList.ts'
 import type { TaskKind } from '../types.ts'
 
 export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
