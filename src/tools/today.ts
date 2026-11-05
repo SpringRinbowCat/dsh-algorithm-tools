@@ -8,7 +8,7 @@ import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT, num } from './helpers.ts'
 import { computeWeakness } from '../analysis/weakness.ts'
 import { localDay } from '../util/local-date.ts'
-import { gitPull } from '../util/git.ts'
+import { gitCommitPush, gitPull } from '../util/git.ts'
 import { contestIdOf, replayTagScores, type ContestMeta } from '../analysis/replay.ts'
 import {
   bandForDifficulty,
@@ -336,6 +336,13 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
         mdWritten = true
       } catch { /* 磁盘不可写时不影响推荐结果 */ }
 
+      // 新生成的今日安排立即推回远端，另一台设备 pull 一下就能看到同一份
+      let mdPush: { ok: boolean; message: string } | null = null
+      if (mdWritten) {
+        mdPush = gitCommitPush(localRoot, [path.join('practice', todayStr, `${todayStr}.md`)],
+          `chore(today): ${todayStr} 今日训练安排`)
+      }
+
       // 到期复习 + 计划进度
       const tasks = store.getTasksByDate(todayStr)
       const checked = tasks.filter((t) => t.checked).length
@@ -357,7 +364,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
           },
           locked,
           scheduledBy: remoteScheduled ? 'remote' : 'local',
-          gitSync: sync,
+          gitSync: { ...sync, push: mdPush },
           mdPath: remoteScheduled ? mdPath : (mdWritten ? mdPath : null),
           bands: bands.map((b) => ({ ...b, problems: b.problems.map(({ reason, ...rest }) => rest) })),
           bandReasons: bands.flatMap((b) => b.problems.map((p) => ({ problemKey: p.problemKey, reason: p.reason }))),
