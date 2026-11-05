@@ -26,6 +26,42 @@ export function gitPull(root: string, timeout = 20_000): GitResult {
   return { ok: true, message: (r.stdout || '').trim().slice(0, 300) || 'up-to-date' }
 }
 
+/**
+ * 冲突时以远端为准：先正常 pull，失败就放弃本地 rebase，
+ * 只把这几个「安排类」路径强制对齐远端（不碰题目代码），然后继续。
+ */
+export function gitPullForceRemote(
+  root: string,
+  relPaths: string[],
+  timeout = 25_000,
+): GitResult & { forced: string[] } {
+  const first = gitPull(root, timeout)
+  if (first.ok) return { ...first, forced: [] }
+  if (!isGitRepo(root)) return { ok: false, message: 'not-a-git-repo', forced: [] }
+
+  // 放弃半途的 rebase/merge，避免仓库停在冲突状态
+  spawnSync('git', ['-C', root, 'rebase', '--abort'], { timeout, encoding: 'utf8' })
+  spawnSync('git', ['-C', root, 'merge', '--abort'], { timeout, encoding: 'utf8' })
+  spawnSync('git', ['-C', root, 'fetch', '--quiet'], { timeout, encoding: 'utf8' })
+
+  const up = spawnSync('git', ['-C', root, 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], {
+    timeout,
+    encoding: 'utf8',
+  })
+  const upstream = (up.stdout || '').trim() || 'origin/main'
+
+  const forced: string[] = []
+  for (const rel of relPaths) {
+    const r = spawnSync('git', ['-C', root, 'checkout', upstream, '--', rel], { timeout, encoding: 'utf8' })
+    if (r.status === 0) forced.push(rel)
+  }
+  return {
+    ok: forced.length > 0,
+    message: forced.length > 0 ? `remote-wins: ${forced.join(', ')}` : `pull failed: ${first.message}`,
+    forced,
+  }
+}
+
 /** 只暂存并提交指定相对路径，推送到远端；失败不抛异常 */
 export function gitCommitPush(
   root: string,

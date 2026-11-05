@@ -5,7 +5,7 @@ import { textOutput, ANY_OUTPUT, num, str } from './helpers.ts'
 import { parsePlanJson, today, addDays, TASK_KINDS } from '../plans/planService.ts'
 import { buildWeeklyPlan } from '../plans/weekly.ts'
 import { localDay } from '../workbench-overview.ts'
-import { gitCommitPush, gitPull } from '../util/git.ts'
+import { gitCommitPush, gitPullForceRemote } from '../util/git.ts'
 import {
   readPlanFile,
   removePlanFile,
@@ -39,7 +39,7 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
       const startDate = str(args.startDate) ?? localDay()
       const root = host.store.getLocalRoot() || host.localRoot
       // 远端优先：先拉，再看 taskList/<startDate>.json 是否已有安排
-      const pull = gitPull(root)
+      const pull = gitPullForceRemote(root, [`taskList/${startDate}.json`])
       const remotePlan = readPlanFile(root, startDate)
       if (remotePlan) {
         const existing = host.store.findPlanByStartDate(startDate)

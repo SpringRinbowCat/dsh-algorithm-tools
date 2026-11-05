@@ -4,7 +4,7 @@ import type { Context, ToolDefinition } from '../dsh-compat.ts'
 import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT } from './helpers.ts'
 import { syncPlatform, syncBank } from './sync-helpers.ts'
-import { gitPull } from '../util/git.ts'
+import { gitPullForceRemote } from '../util/git.ts'
 import { syncPlansFromFiles } from '../plans/taskList.ts'
 
 export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
@@ -34,7 +34,7 @@ export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
       const { store, adapters } = host
       // 同步也顺带对齐计划文件：先 pull，再把 taskList 灌进本地 state
       const root = store.getLocalRoot() || host.localRoot
-      const pull = gitPull(root)
+      const pull = gitPullForceRemote(root, ['taskList'])
       const plans = syncPlansFromFiles(store, root)
       const platform = args.platform as string
       const wantBank = args.bank === true

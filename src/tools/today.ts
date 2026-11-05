@@ -8,7 +8,7 @@ import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT, num } from './helpers.ts'
 import { computeWeakness } from '../analysis/weakness.ts'
 import { localDay } from '../util/local-date.ts'
-import { gitCommitPush, gitPull } from '../util/git.ts'
+import { gitCommitPush, gitPullForceRemote } from '../util/git.ts'
 import { contestIdOf, replayTagScores, type ContestMeta } from '../analysis/replay.ts'
 import {
   bandForDifficulty,
@@ -215,7 +215,8 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       const localRoot = store.getLocalRoot() || host.localRoot
 
       // 多端一致：先把远端拉到本地，再看今天是否已经有远端安排的 .md
-      const sync = gitPull(localRoot)
+      // 冲突时以远端为准：只强制对齐今日 md，不碰题目代码
+      const sync = gitPullForceRemote(localRoot, [`practice/${todayStr}/${todayStr}.md`])
       const dayDir = path.join(localRoot, 'practice', todayStr)
       const mdFile = path.join(dayDir, `${todayStr}.md`)
       const remoteScheduled = fs.existsSync(mdFile)

@@ -36,6 +36,16 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 - `icpc_review action=add platform=codeforces problemKey=2020A` 单题入库
 - `icpc_review action=scan` 扫一遍本地目录，把没入库的题批量收进来（默认扫 `localRoot`）
 
+## 冲突策略：远端为准
+
+`icpc_today` / `icpc_sync` / `icpc_generate_plan` 在动手前都会先 `git pull`。
+如果本地改动和远端冲突（pull 失败），会**自动放弃本地那份安排**：
+
+1. `git rebase --abort` / `merge --abort`，不让仓库卡在冲突状态
+2. 只把「安排类」路径强制对齐远端（`practice/<日期>/<日期>.md` 或 `taskList/`）
+3. 题目代码（`*.cpp`）不动，不会被覆盖
+4. 对齐后立即同步进面板（今日训练索引 / 计划列表），不需要再问
+
 ## 今日训练怎么算
 
 `icpc_today` 的三档推荐有两个特点：
