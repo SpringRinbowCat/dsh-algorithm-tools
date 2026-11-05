@@ -24,6 +24,35 @@ const DEFAULT_COUNTS: Record<TodayBandKey, number> = { consolidation: 2, core: 3
 const BAND_KEYS: TodayBandKey[] = ['consolidation', 'core', 'challenge']
 const KEY_RE = /^(\d{3,6})([A-Z]\d?)$/
 
+
+interface DayMdEntry {
+  band: TodayBandKey
+  problemKey: string
+  reason: string
+}
+
+/** 解析 practice/<日期>/<日期>.md：保留原分档和选题理由（md 是远端安排的真相） */
+function parseDayMd(md: string): DayMdEntry[] {
+  const labelToKey: Record<string, TodayBandKey> = {
+    巩固区: 'consolidation',
+    同段区: 'core',
+    挑战区: 'challenge',
+  }
+  const out: DayMdEntry[] = []
+  let band: TodayBandKey | null = null
+  for (const line of md.split('\n')) {
+    const head = /^##\s*(巩固区|同段区|挑战区)/.exec(line)
+    if (head) {
+      band = labelToKey[head[1]!] ?? null
+      continue
+    }
+    if (!band) continue
+    const row = /^\|\s*\[(\d{3,6}[A-Z]\d?)\]\(([^)]+)\)\s*\|([^|]*)\|([^|]*)\|([^|]*)\|/.exec(line)
+    if (row) out.push({ band, problemKey: row[1]!, reason: (row[5] ?? '').trim() })
+  }
+  return out
+}
+
 interface LocalProblem {
   problemKey: string
   platform: 'codeforces' | 'atcoder'
@@ -182,14 +211,10 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       const local = listDayProblems(localRoot, todayStr)
 
       // md 里有安排但对应 .cpp 还没 checkout 时，从 md 的题号链接里把安排读出来
-      if (remoteScheduled && local.problems.length === 0) {
-        try {
-          const md = fs.readFileSync(mdFile, 'utf8')
-          const keys = [...md.matchAll(/\[(\d{3,6}[A-Z]\d?)\]/g)].map((m) => m[1]!)
-          for (const key of new Set(keys)) local.problems.push({ problemKey: key, platform: 'codeforces' })
-        } catch {
-          // 读不出来就按本地文件为准
-        }
+      // 远端 md 是安排的唯一真相：题目集合和分档都以它为准
+      const mdEntries = remoteScheduled ? parseDayMd(fs.readFileSync(mdFile, 'utf8')) : []
+      if (mdEntries.length > 0 && local.problems.length === 0) {
+        for (const e of mdEntries) local.problems.push({ problemKey: e.problemKey, platform: 'codeforces' })
       }
       const locked = local.problems.length > 0 || remoteScheduled
 
@@ -205,6 +230,8 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       if (locked) {
         // 按本地已有题目锁定：难度已知的按档分组，未知的放同段区
         const groups: Record<TodayBandKey, TodayMdProblem[]> = { consolidation: [], core: [], challenge: [] }
+        const mdBandOf = new Map(mdEntries.map((e) => [e.problemKey, e.band]))
+        const mdReasonOf = new Map(mdEntries.map((e) => [e.problemKey, e.reason]))
         for (const item of local.problems) {
           const rec = store.getProblemByKey(item.platform, item.problemKey)
           const p = {
@@ -217,10 +244,11 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
             tags: rec?.tags ?? [],
             weakTags: [] as string[],
           }
-          const band = bandForDifficulty(level, p.difficulty)
-          const reason = rec
+          const band = mdBandOf.get(p.problemKey) ?? bandForDifficulty(level, p.difficulty)
+          const fromMd = mdReasonOf.get(p.problemKey)
+          const reason = fromMd || (rec
             ? `本地已锁定；${reasonOf(p)}`
-            : '本地已锁定；题库里没有这道题的元数据'
+            : '本地已锁定；题库里没有这道题的元数据')
           groups[band].push({ ...p, reason })
         }
         bands = BAND_KEYS.map((key) => ({
