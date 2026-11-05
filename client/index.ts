@@ -8,7 +8,7 @@ import {
 import { HeaderAction, WorkbenchGlyph, WorkbenchPanel } from './WorkbenchPanel.tsx'
 
 export const inject = ['slots', 'sidebarRight', 'sidebarRightTabs']
-export const name = 'dsh-algo-trainer'
+export const name = 'dsh-algorithm-tools'
 
 const TAB_ID = 'dsh-algo-trainer.workbench'
 const TAB_KIND = 'icpc-workbench'

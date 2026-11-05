@@ -1,4 +1,4 @@
-# dsh-algo-trainer
+# dsh-algorithm-tools
 
 算法学习训练台 — DeepSeek Harness 插件。
 
@@ -81,7 +81,7 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 ## 目录结构
 
 ```
-dsh-algo-trainer/
+dsh-algorithm-tools/
 ├── package.json              # dsh 插件包定义（dsh.bundle + dsh.client）
 ├── tsconfig.json             # host 侧 tsconfig
 ├── tsconfig.client.json      # client 侧 tsconfig
@@ -135,10 +135,10 @@ dsh-algo-trainer/
 
 ```bash
 # 在 dsh profile 中添加
-dsh plugin --profile web add dsh-algo-trainer
+dsh plugin --profile web add dsh-algorithm-tools
 
 # 或从源码
-cd dsh-algo-trainer
+cd dsh-algorithm-tools
 npm install        # prepare 钩子会自动构建 lib/
 ```
 
@@ -148,7 +148,7 @@ npm install        # prepare 钩子会自动构建 lib/
 # cordis.patch.yml
 - insert:
     - id: algo-trainer
-      name: 'dsh-algo-trainer'
+      name: 'dsh-algorithm-tools'
       config:
         dataDir: ''           # 数据目录，留空则用 $DSH_HOME/.icpc-data/
         ai:
@@ -193,7 +193,7 @@ AI 配置也可运行时通过 `icpc_settings` 工具修改（持久化到 JSON�
 Agent 作用域，并由 Harness 当前对话执行后续请求。其他会话不受影响。
 
 安装 `dsh-better-sidebar` 后，插件会通过其公开的 `ctx.betterSidebar`
-服务注册 `dsh-algo-trainer:workbench` tab，ICPC 页面由 better-sidebar
+服务注册 `dsh-algorithm-tools:workbench` tab，ICPC 页面由 better-sidebar
 的原生 tab 宿主承载；未安装时自动回退到 DSH 原生右侧栏。
 
 ## 测试
@@ -206,7 +206,7 @@ npx tsx --test tests/**/*.test.ts
 
 ## dsh 插件契约
 
-- **`name`**: `'dsh-algo-trainer'`
+- **`name`**: `'dsh-algorithm-tools'`
 - **`inject`**: `['tools']` — 只依赖 dsh tools 服务；fs 接口不兼容、rpc 服务不存在，故均不注入
 - **`apply(ctx, config)`**: 加载 JSON 存储（load 完成后工具才可安全读写）→ 初始化 CF/AtCoder 适配器 → 注册 11 个工具 → `ctx.effect()` 注册 dispose 落盘
 - **`Config`**: 结构兼容的配置 schema（dataDir / ai）

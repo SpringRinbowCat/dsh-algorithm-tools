@@ -1,5 +1,5 @@
 /**
- * dsh-algo-trainer — 算法学习训练插件 for DeepSeek Harness
+ * dsh-algorithm-tools — 算法学习训练插件 for DeepSeek Harness
  *
  * Host 半边：按会话激活 13 个 agent tools。
  * 数据层用 JSON 文件持久化（替代 SQLite），通过 Node fs 落盘到 DSH_HOME/.icpc-data。
@@ -25,7 +25,7 @@ import { registerContestsRoute } from './workbench-contests.ts'
 import { defaultLocalRoots } from './util/local-scan.ts'
 import { registerPlanRoute } from './workbench-plan.ts'
 
-export const name = 'dsh-algo-trainer'
+export const name = 'dsh-algorithm-tools'
 export const inject = ['tools', 'agents', 'webServer']
 export { Config }
 
