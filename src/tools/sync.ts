@@ -51,6 +51,7 @@ export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
         if (results.length === 0 && banks.length === 0) {
           return { ok: false, error: '没有已绑定的启用账号，请先通过 icpc_settings 绑定平台账号' }
         }
+        await store.flush()
         return { ok: true, results, ...(banks.length > 0 ? { banks } : {}) }
       }
 
@@ -68,6 +69,8 @@ export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
       if (handle) out.result = await syncPlatform(host, platform, handle)
       if (wantBank) out.bank = await syncBank(host, platform)
       out.reviews = collectLocalReviews(store)
+      // 显式落盘：别依赖 500ms 防抖，退出/重启时数据才不会丢
+      await store.flush()
       return out
     },
     presentCall: (args) => ({ card: 'generic', title: `同步 ${args.platform}` }),

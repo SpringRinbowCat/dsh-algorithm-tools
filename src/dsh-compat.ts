@@ -122,6 +122,8 @@ export interface FsService {
   mkdir(path: string): Promise<void>
   exists(path: string): Promise<boolean>
   readdir(path: string): Promise<string[]>
+  /** 原子写盘用：先写临时文件再 rename 覆盖，避免写到一半进程退出留下残缺 JSON */
+  rename?(from: string, to: string): Promise<void>
 }
 
 export interface ToolsService {

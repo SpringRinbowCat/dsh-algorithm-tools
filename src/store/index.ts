@@ -106,7 +106,14 @@ export class IcpcStore {
         if (!this.state.bankSyncedAt) this.state.bankSyncedAt = null
       }
     } catch (e) {
-      console.warn(`[icpc-store] load failed, starting fresh: ${(e as Error).message}`)
+      const msg = (e as Error).message
+      console.warn(`[icpc-store] load failed, starting fresh: ${msg}`)
+      // 解析失败时把坏文件改名留档，避免下一次 flush 直接覆盖掉（数据就找不回来了）
+      try {
+        const bad = `${this.dataDir}/${STATE_FILE}.corrupt-${Date.now()}`
+        if (this.fs.rename) await this.fs.rename(`${this.dataDir}/${STATE_FILE}`, bad)
+        console.warn(`[icpc-store] corrupted state backed up to ${bad}`)
+      } catch { /* 备份失败就算了，至少别崩 */ }
     }
     for (const p of this.state.plans) {
       if (p.id >= this.nextPlanId) this.nextPlanId = p.id + 1
@@ -131,10 +138,24 @@ export class IcpcStore {
 
   async flush(): Promise<void> {
     // 必须先等 load 完成：否则会用默认空 state 覆盖磁盘上的真实数据
-    await this.ready
+    try {
+      await this.ready
+    } catch (e) {
+      console.error(`[icpc-store] flush skipped, load not ready: ${(e as Error).message}`)
+      return
+    }
+    const target = `${this.dataDir}/${STATE_FILE}`
     try {
       await this.fs.mkdir(this.dataDir)
-      await this.fs.writeFile(`${this.dataDir}/${STATE_FILE}`, JSON.stringify(this.state, null, 2))
+      const json = JSON.stringify(this.state, null, 2)
+      if (this.fs.rename) {
+        // 原子写：先写临时文件，再整体覆盖，进程中途被杀也不会留下半个 JSON
+        const tmp = `${target}.tmp-${process.pid}`
+        await this.fs.writeFile(tmp, json)
+        await this.fs.rename(tmp, target)
+      } else {
+        await this.fs.writeFile(target, json)
+      }
     } catch (e) {
       console.error(`[icpc-store] flush failed: ${(e as Error).message}`)
     }

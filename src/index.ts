@@ -59,6 +59,9 @@ function nodeFs(): FsService {
     async readdir(p: string): Promise<string[]> {
       return fs.promises.readdir(p)
     },
+    async rename(from: string, to: string): Promise<void> {
+      await fs.promises.rename(from, to)
+    },
   }
 }
 
@@ -71,6 +74,19 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
   )
 
   const store = new IcpcStore(nodeFs(), dataDir)
+
+  // 启动探针：记录宿主进程真正用的目录 + 是否可写，排查「同步完数据没落盘」用
+  void (async () => {
+    try {
+      await fs.promises.mkdir(dataDir, { recursive: true })
+      await fs.promises.appendFile(
+        path.join(dataDir, 'icpc-boot.log'),
+        `${new Date().toISOString()} pid=${process.pid} dataDir=${dataDir} cwd=${process.cwd()} DSH_HOME=${process.env.DSH_HOME ?? '(unset)'} HOME=${process.env.HOME ?? '(unset)'}\n`,
+      )
+    } catch (e) {
+      console.error(`[icpc-boot] cannot write boot log to ${dataDir}: ${(e as Error).message}`)
+    }
+  })()
   const localRoot = config.localRoot || defaultLocalRoots()[0] || ''
   // load() 已在构造器中启动；工具在 ready 之前注册无害（写盘已等待 ready）
 
