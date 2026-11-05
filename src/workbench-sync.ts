@@ -9,7 +9,6 @@ import type { IcpcHost } from './index.ts'
 import type { PlatformId } from './types.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { syncPlatform, syncBank } from './tools/sync-helpers.ts'
-import { collectLocalReviews } from './reviews/collect.ts'
 import { buildTodayStatus, localDay } from './workbench-overview.ts'
 
 const THROTTLE_MS = 30 * 60 * 1000
@@ -76,10 +75,6 @@ async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
     if (bank.errors.length === 0) host.store.setBankSyncedAt(new Date().toISOString())
     summary.bank = { platform: bank.platform, fetched: bank.fetched, inserted: bank.inserted }
   }
-
-  // 本地 Codeforces 目录 → 复习库
-  const reviews = collectLocalReviews(host.store)
-  summary.reviews = { added: reviews.added, localProblems: reviews.localProblems }
 
   // 今日训练已完成 → 自动勾掉当天的计划任务，避免计划与日历两套账
   const today = localDay()

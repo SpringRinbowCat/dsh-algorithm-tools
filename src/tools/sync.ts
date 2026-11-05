@@ -4,7 +4,6 @@ import type { Context, ToolDefinition } from '../dsh-compat.ts'
 import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT } from './helpers.ts'
 import { syncPlatform, syncBank } from './sync-helpers.ts'
-import { collectLocalReviews } from '../reviews/collect.ts'
 
 export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
   return ctx.tools.register(defineTool({
@@ -68,7 +67,6 @@ export function registerSyncTool(host: IcpcHost, ctx: Context): () => void {
       const out: Record<string, unknown> = { ok: true }
       if (handle) out.result = await syncPlatform(host, platform, handle)
       if (wantBank) out.bank = await syncBank(host, platform)
-      out.reviews = collectLocalReviews(store)
       // 显式落盘：别依赖 500ms 防抖，退出/重启时数据才不会丢
       await store.flush()
       return out

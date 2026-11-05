@@ -27,6 +27,15 @@ dsh plugin --profile desktop add github:SpringRinbowCat/dsh-algorithm-tools
 dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 ```
 
+## 复习库是手动的
+
+训练/同步**不再自动把本地题目收进复习库**（那是旧流程的冗余，训练质量已经改用 `icpc_review action=contest` 的 Rank 复盘来判断）。
+
+需要复习时显式操作：
+
+- `icpc_review action=add platform=codeforces problemKey=2020A` 单题入库
+- `icpc_review action=scan` 扫一遍本地目录，把没入库的题批量收进来（默认扫 `localRoot`）
+
 ## 今日训练怎么算
 
 `icpc_today` 的三档推荐有两个特点：
@@ -47,7 +56,7 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 | 内容 | 位置 |
 |---|---|
 | 插件数据（题库/提交/计划/复习/索引） | `~/.icpc-data/icpc-state.json`（Windows 为 `C:\Users\<你>\.icpc-data\`） |
-| 本地题目目录（复习自动收题） | 默认 `D:\codeforces`，macOS/Linux 回退到 `~/codeforces` |
+| 本地题目目录 | 优先用 `icpc_settings action=set_local_root` 设置；未设置时 `D:\codeforces` → `~/codeforces` |
 
 本地题目目录的约定是 `<日期>/<题号>/<题号>.cpp`（例如 `2026-11-05/2283C/2283C.cpp`），也兼容 `practise/<日期>/<题号>/`。目录名或 `.cpp` 文件名能匹配 `2283C` / `1858E1` 这类题号即可。
 

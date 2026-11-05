@@ -18,7 +18,7 @@ export interface CollectStats {
  * - 已在复习库 → 跳过
  */
 export function collectLocalReviews(store: IcpcStore, opts: { root?: string } = {}): CollectStats {
-  const { scanned, problems } = scanLocalProblems(opts.root)
+  const { scanned, problems } = scanLocalProblems(opts.root || store.getLocalRoot() || undefined)
   const stats: CollectStats = {
     scannedRoots: scanned.map((s) => s.root),
     localProblems: problems.length,
