@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -9,6 +8,7 @@ import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT, num } from './helpers.ts'
 import { computeWeakness } from '../analysis/weakness.ts'
 import { localDay } from '../util/local-date.ts'
+import { gitPull } from '../util/git.ts'
 import { contestIdOf, replayTagScores, type ContestMeta } from '../analysis/replay.ts'
 import {
   bandForDifficulty,
@@ -23,20 +23,6 @@ import {
 const DEFAULT_COUNTS: Record<TodayBandKey, number> = { consolidation: 2, core: 3, challenge: 1 }
 const BAND_KEYS: TodayBandKey[] = ['consolidation', 'core', 'challenge']
 const KEY_RE = /^(\d{3,6})([A-Z]\d?)$/
-
-/** 先跟远端对齐：多端共用同一份训练目录时，以仓库里的安排为准 */
-function gitPull(root: string): { pulled: boolean; message: string } {
-  if (!root || !fs.existsSync(path.join(root, '.git'))) {
-    return { pulled: false, message: 'not-a-git-repo' }
-  }
-  const r = spawnSync('git', ['-C', root, 'pull', '--rebase', '--autostash', '--quiet'], {
-    timeout: 20_000,
-    encoding: 'utf8',
-  })
-  if (r.error) return { pulled: false, message: r.error.message }
-  if (r.status !== 0) return { pulled: false, message: (r.stderr || '').trim().slice(0, 300) || `git exit ${r.status}` }
-  return { pulled: true, message: (r.stdout || '').trim().slice(0, 300) }
-}
 
 interface LocalProblem {
   problemKey: string
