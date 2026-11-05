@@ -252,14 +252,16 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
       </div>
 
       <div className={`icpc-viz__advice icpc-viz__advice--${t.advice.kind}`}>
-        <strong>{t.advice.title}</strong>
+        <div className="icpc-viz__advice-head">
+          <strong>{t.advice.title}</strong>
+          {t.done && onExtraTraining ? (
+            <button type="button" className="icpc-viz__extra" onClick={onExtraTraining}>
+              加训
+            </button>
+          ) : null}
+        </div>
         {t.advice.items.length > 0 ? (
           <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
-        ) : null}
-        {t.done && onExtraTraining ? (
-          <button type="button" className="icpc-viz__extra" onClick={onExtraTraining}>
-            加训
-          </button>
         ) : null}
         {(t.planTasks.remaining.length > 0 || t.training.remaining.length > 0) ? (
           <div className="icpc-viz__left">
@@ -392,7 +394,8 @@ const CSS = `
 .icpc-viz__advice { margin-top: 10px; padding: 8px 10px; font-size: 12px; border-radius: 8px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); border: 1px solid var(--dsw-alias-border-l4); }
 .icpc-viz__advice--catchup { border-color: #d97706; }
 .icpc-viz__advice--extra { border-color: #16a34a; }
-.icpc-viz__extra { margin-top: 8px; padding: 4px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; border: 1px solid #16a34a; background: transparent; color: inherit; }
+.icpc-viz__advice-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.icpc-viz__extra { padding: 4px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; border: 1px solid #16a34a; background: transparent; color: inherit; }
 .icpc-viz__extra:hover { background: rgba(22, 163, 74, 0.12); }
 .icpc-viz__advice ul { margin: 6px 0 0; padding-left: 16px; color: var(--dsw-alias-label-secondary); }
 .icpc-viz__left { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
