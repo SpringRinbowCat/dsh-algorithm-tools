@@ -143,7 +143,14 @@ export function WorkbenchPanel({
         </div>
       </header>
 
-      <VizPanel overview={overview} stats={stats} contests={contests} plan={plan} error={vizError} />
+      <VizPanel
+        overview={overview}
+        stats={stats}
+        contests={contests}
+        plan={plan}
+        error={vizError}
+        onExtraTraining={() => void runFeature(WORKBENCH_FEATURES.find((f) => f.id === 'extra')!)}
+      />
 
       {error ? <div className="icpc-workbench__error" role="alert">{error}</div> : null}
 
@@ -152,7 +159,7 @@ export function WorkbenchPanel({
           <section className="icpc-workbench__group" key={group.id}>
             <h3>{group.label}</h3>
             <div className="icpc-workbench__items">
-              {WORKBENCH_FEATURES.filter((feature) => feature.group === group.id).map((feature) => (
+              {WORKBENCH_FEATURES.filter((feature) => feature.group === group.id && !feature.hidden).map((feature) => (
                 <button
                   className="icpc-workbench__item"
                   type="button"

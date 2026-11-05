@@ -78,9 +78,11 @@ export interface VizPanelProps {
   contests: ContestItem[] | null
   plan: PlanSnapshot | null
   error?: string | null
+  /** 今日训练完成时显示的「加训」按钮；不传则不显示 */
+  onExtraTraining?: () => void
 }
 
-export function VizPanel({ overview, stats, contests, plan, error = null }: VizPanelProps): ReactNode {
+export function VizPanel({ overview, stats, contests, plan, error = null, onExtraTraining }: VizPanelProps): ReactNode {
   const [view, setView] = useState(0)
 
   return (
@@ -116,7 +118,7 @@ export function VizPanel({ overview, stats, contests, plan, error = null }: VizP
       {error ? <div className="icpc-viz__error" role="alert">{error}</div> : null}
       {!overview || !stats ? <div className="icpc-viz__loading">加载中…</div> : null}
 
-      {view === 0 && overview ? <CalendarView data={overview} /> : null}
+      {view === 0 && overview ? <CalendarView data={overview} onExtraTraining={onExtraTraining} /> : null}
       {view === 1 && stats ? <StatsView data={stats} /> : null}
       {view === 2 ? <ContestsView data={contests} /> : null}
       {view === 3 ? <PlanView data={plan} /> : null}
@@ -222,7 +224,7 @@ function ContestsView({ data }: { data: ContestItem[] | null }): ReactNode {
   )
 }
 
-function CalendarView({ data }: { data: Overview }): ReactNode {
+function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraining?: () => void }): ReactNode {
   const t = data.today
   const weeks: DayCell[][] = []
   for (let i = 0; i < data.days.length; i += 7) weeks.push(data.days.slice(i, i + 7))
@@ -251,7 +253,14 @@ function CalendarView({ data }: { data: Overview }): ReactNode {
 
       <div className={`icpc-viz__advice icpc-viz__advice--${t.advice.kind}`}>
         <strong>{t.advice.title}</strong>
-        <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
+        {t.advice.items.length > 0 ? (
+          <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
+        ) : null}
+        {t.done && onExtraTraining ? (
+          <button type="button" className="icpc-viz__extra" onClick={onExtraTraining}>
+            加训
+          </button>
+        ) : null}
         {(t.planTasks.remaining.length > 0 || t.training.remaining.length > 0) ? (
           <div className="icpc-viz__left">
             {t.training.remaining.map((r) => (r.url
@@ -383,6 +392,8 @@ const CSS = `
 .icpc-viz__advice { margin-top: 10px; padding: 8px 10px; font-size: 12px; border-radius: 8px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); border: 1px solid var(--dsw-alias-border-l4); }
 .icpc-viz__advice--catchup { border-color: #d97706; }
 .icpc-viz__advice--extra { border-color: #16a34a; }
+.icpc-viz__extra { margin-top: 8px; padding: 4px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; border: 1px solid #16a34a; background: transparent; color: inherit; }
+.icpc-viz__extra:hover { background: rgba(22, 163, 74, 0.12); }
 .icpc-viz__advice ul { margin: 6px 0 0; padding-left: 16px; color: var(--dsw-alias-label-secondary); }
 .icpc-viz__left { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .icpc-viz__left a, .icpc-viz__left span { font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--dsw-alias-border-l4); text-decoration: none; color: var(--dsw-alias-label-primary); }

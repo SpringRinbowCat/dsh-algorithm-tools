@@ -21,6 +21,8 @@ export interface WorkbenchFeature {
   description: string
   icon: FeatureIcon
   prompt?: string
+  /** true = 只通过卡片里的按钮触发，不出现在右侧功能列表里 */
+  hidden?: boolean
 }
 
 export const FEATURE_GROUPS: ReadonlyArray<{ id: FeatureGroup; label: string }> = [
@@ -58,6 +60,15 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     description: '近期比赛复盘与薄弱项',
     icon: 'reviews',
     prompt: '请调用 icpc_review 工具（action=contests）列出我近期参与的比赛并复盘：每题用时、未通过原因、代码优化点、暴露的薄弱项。',
+  },
+  {
+    id: 'extra',
+    group: 'training',
+    label: '加训',
+    description: '今日训练完成，再换一批挑战题',
+    icon: 'today',
+    hidden: true,
+    prompt: '今天的三档训练已经完成，请调用 icpc_today（带 rotate 换一批）给我 1-2 道挑战区的加练题，并说明选题理由。',
   },
 ]
 

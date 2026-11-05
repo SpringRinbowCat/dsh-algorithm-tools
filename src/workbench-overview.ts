@@ -169,10 +169,8 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     done: true,
     advice: {
       kind: 'extra',
-      title: '今日训练完成，可以加训',
-      items: [
-        `今天 AC 了 ${cell.ac} 题（含训练外），可以再从「今日训练」换一批挑战题`,
-      ],
+      title: '今日训练完成',
+      items: [],
     },
   }
 }
