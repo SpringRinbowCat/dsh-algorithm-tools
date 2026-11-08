@@ -140,11 +140,16 @@ export function buildReplay(store: IcpcStore, contestId: number, meta: ContestMe
 
 /** 最近几场比赛暴露的标签分数（归一化到 0..1），供今日训练与历史弱项各占 50% 融合 */
 export function replayTagScores(store: IcpcStore, metaOf: (id: number) => ContestMeta | null, opts: { days?: number; contests?: number } = {}): Map<string, number> {
-  const ids = recentContestIds(store, opts.days ?? 30).slice(0, opts.contests ?? 3)
+  const ids = recentContestIds(store, opts.days ?? 30)
+    .map((id) => ({ id, meta: metaOf(id) }))
+    .filter((x): x is { id: number; meta: ContestMeta } => x.meta !== null && isFinalized(x.meta))
+    .sort((a, b) => (b.meta.startTimeIso ?? '').localeCompare(a.meta.startTimeIso ?? ''))
+    .slice(0, opts.contests ?? 3)
+    .map((x) => x.id)
   const raw = new Map<string, number>()
   for (const id of ids) {
     const meta = metaOf(id)
-    if (!meta || !isFinalized(meta)) continue
+    if (!meta) continue
     const report = buildReplay(store, id, meta)
     for (const w of report.weakTags) raw.set(w.tag, (raw.get(w.tag) ?? 0) + w.weight)
   }
