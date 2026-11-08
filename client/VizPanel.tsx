@@ -254,8 +254,9 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
           </div>
         </div>
         <div className="icpc-viz__streak">
+          <span className="icpc-viz__unit">连续</span>
           <span className="icpc-viz__num">{data.streak.current}</span>
-          <span className="icpc-viz__unit">连续天</span>
+          <span className="icpc-viz__unit">天</span>
         </div>
       </div>
 
@@ -396,8 +397,8 @@ const CSS = `
 .icpc-viz__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-top: 12px; }
 .icpc-viz__state { font-size: 13px; font-weight: 600; }
 .icpc-viz__meta { margin-top: 3px; font-size: 11px; color: var(--dsw-alias-label-caption); }
-.icpc-viz__streak { text-align: right; line-height: 1.1; }
-.icpc-viz__num { display: block; font-size: 20px; font-weight: 700; }
+.icpc-viz__streak { display: flex; align-items: baseline; justify-content: flex-end; gap: 3px; line-height: 1.1; }
+.icpc-viz__num { font-size: 20px; font-weight: 700; }
 .icpc-viz__unit { font-size: 10px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__advice { margin-top: 10px; padding: 8px 10px; font-size: 12px; border-radius: 8px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); border: 1px solid var(--dsw-alias-border-l4); }
 .icpc-viz__advice--catchup { border-color: #d97706; }
