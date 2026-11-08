@@ -57,9 +57,9 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     id: 'sync',
     group: 'training',
     label: '同步数据',
-    description: '同步 Codeforces 刷题记录',
+    description: '同步提交记录并推送本地代码',
     icon: 'sync',
-    prompt: '请调用 icpc_sync platform=codeforces 同步我的提交记录，并汇报新增提交数。',
+    prompt: '请先调用 icpc_sync platform=codeforces 同步我的提交记录；然后检查本地算法训练仓库，把未提交的题目代码、训练文档和计划文件提交并推送到远程仓库，只提交源码和训练文档，不要提交 exe、编译产物或临时调试文件；最后汇报新增提交数、提交了哪些代码以及推送结果。',
   },
   {
     id: 'reviews',
