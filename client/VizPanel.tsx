@@ -72,6 +72,13 @@ function levelOf(cell: DayCell): 0 | 1 | 2 | 3 {
   return 0
 }
 
+function monthCheckin(data: Overview): { checked: number; days: number } {
+  const month = data.today.date.slice(0, 7)
+  const checked = data.days.filter((d) => d.date.startsWith(month) && d.ac > 0).length
+  const days = Number(data.today.date.slice(8, 10))
+  return { checked, days }
+}
+
 export interface VizPanelProps {
   overview: Overview | null
   stats: Stats | null
@@ -226,6 +233,7 @@ function ContestsView({ data }: { data: ContestItem[] | null }): ReactNode {
 
 function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraining?: () => void }): ReactNode {
   const t = data.today
+  const month = monthCheckin(data)
   const weeks: DayCell[][] = []
   for (let i = 0; i < data.days.length; i += 7) weeks.push(data.days.slice(i, i + 7))
   return (
@@ -299,7 +307,7 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
         <i className="icpc-viz__swatch icpc-viz__cell--2" />
         <i className="icpc-viz__swatch icpc-viz__cell--3" />
         <span>多</span>
-        <span className="icpc-viz__total">累计 {data.streak.totalDays} 天有 AC · 最长 {data.streak.longest} 天</span>
+        <span className="icpc-viz__total">本月已累计打卡 {month.checked}/{month.days} 天</span>
       </div>
     </>
   )
