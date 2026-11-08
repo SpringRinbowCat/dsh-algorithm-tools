@@ -114,6 +114,9 @@ export async function syncBank(host: IcpcHost, platform: PlatformId): Promise<Ba
     const mine = stats.find((s) => s.platform === platform)
     result.inserted = mine?.inserted ?? 0
     result.updated = mine?.updated ?? 0
+    if (result.errors.length === 0) {
+      host.store.setBankSyncedAt(new Date().toISOString())
+    }
   } catch (e) {
     result.errors.push((e as Error).message)
   }

@@ -72,7 +72,6 @@ async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
   const bankStale = !bankAt || now - Date.parse(bankAt) > BANK_REFRESH_MS
   if (host.store.countProblems('codeforces') < BANK_BOOTSTRAP_THRESHOLD || bankStale) {
     const bank = await syncBank(host, 'codeforces')
-    if (bank.errors.length === 0) host.store.setBankSyncedAt(new Date().toISOString())
     summary.bank = { platform: bank.platform, fetched: bank.fetched, inserted: bank.inserted }
   }
 
