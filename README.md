@@ -50,8 +50,8 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 
 `icpc_today` 的三档推荐有两个特点：
 
-1. **不读 rating**：能力值 = 近 60 天「AC 题目难度中位数 × 0.6」+ 近 60 天「比赛中 AC 的题目难度中位数 × 0.4」。
-   某一侧没有数据就退化为另一侧；两边都空才回落到 1200。
+1. **能力值取当前 rating**：直接使用 Codeforces 当前 rating，四舍五入到 100 后划分三档。
+   拉不到 rating 时才回退到近 60 天「刷题 AC 难度中位数 × 0.6 + 比赛 AC 难度中位数 × 0.4」。
 2. **按目录锁定**：先读本地 `<训练根>/practice/<今天>/`，如果已经有题目文件夹，就按这些题出推荐（不再重新抽题），
    这样两台电脑从 GitHub 同步同一份目录时不会各抽一套。只有目录为空时才新抽题。
 
@@ -115,7 +115,7 @@ dsh-algorithm-tools/
 │   │   ├── weakness.ts       # 弱项画像（标签/难度 gap 打分）
 │   │   ├── trend.ts          # 12 周趋势（ISO 周键，空周补 0）
 │   │   ├── tags.ts           # 标签净化（过滤赛事/年份/地区等噪声标签）
-│   │   └── today.ts          # 今日三档选题（刷题+比赛双路能力值、落档、Markdown 渲染）
+│   │   └── today.ts          # 今日三档选题（当前 rating 能力值、落档、Markdown 渲染）
 │   ├── reviews/
 │   │   └── schedule.ts       # 间隔复习调度（1/3/7/14/30/60 天阶梯，hard/ok/easy 调档）
 │   ├── plans/
@@ -177,7 +177,7 @@ AI 配置也可运行时通过 `icpc_settings` 工具修改（持久化到 JSON�
 |------|------|
 | `icpc_sync` | 同步 CF/AtCoder 提交记录（增量，支持 all 批量） |
 | `icpc_stats` | 统计分析：overall / weakness / trend |
-| `icpc_today` | 今日三档训练推荐（巩固/同段/挑战；能力值=近 N 天刷题 60% + 比赛 40%；当天目录已有题就锁定；自动写 `<日期>.md`） |
+| `icpc_today` | 今日三档训练推荐（巩固/同段/挑战；能力值取当前 rating；当天目录已有题就锁定；自动写 `<日期>.md`） |
 | `icpc_generate_plan` | AI 生成训练计划（无 key 降级模板） |
 | `icpc_manage_plan` | 计划管理：list/detail/checkin/uncheck/delete/import/update_task/delete_task |
 | `icpc_review` | 间隔复习库：list/add/feedback/remove |

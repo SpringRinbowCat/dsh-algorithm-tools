@@ -113,6 +113,8 @@ export function pickBand(
 export interface LevelEstimate {
   /** 综合能力值（取整到 100） */
   level: number
+  /** 当前 Codeforces rating；有值时直接作为能力值来源 */
+  rating: number | null
   /** 刷题侧：近窗口内 AC 难度中位数 */
   practiceLevel: number | null
   /** 比赛侧：近窗口内比赛中 AC 的题目难度中位数 */
@@ -152,10 +154,24 @@ export function estimateLevelDetail(
   }
   return {
     level,
+    rating: null,
     practiceLevel,
     contestLevel,
     practiceCount: practiceDiffs.length,
     contestCount: contestDiffs.length,
+  }
+}
+
+/** 直接按当前 rating 取能力值，四舍五入到 100 后用于三档划分 */
+export function estimateLevelFromRating(rating: number): LevelEstimate {
+  const level = Math.round(rating / 100) * 100
+  return {
+    level,
+    rating,
+    practiceLevel: null,
+    contestLevel: null,
+    practiceCount: 0,
+    contestCount: 0,
   }
 }
 
@@ -210,14 +226,19 @@ export function renderTodayMarkdown(input: TodayMdInput): string {
   parts.push(`# ${input.date} 今日训练`)
   parts.push('')
 
-  const sources = [
-    level.practiceLevel != null ? `刷题 ${level.practiceLevel}` : '刷题 数据不足',
-    level.contestLevel != null ? `比赛 ${level.contestLevel}` : '比赛 数据不足',
-  ].join(' · ')
-  parts.push(`- **能力值**：${level.level}（${sources}）`)
-  parts.push(
-    `- **口径**：近 ${input.windowDays} 天 AC 难度中位数（刷题 60%）+ 近 ${input.windowDays} 天比赛中 AC 难度中位数（比赛 40%），不使用 rating`,
-  )
+  if (level.rating != null) {
+    parts.push(`- **能力值**：${level.level}（当前 rating ${level.rating}）`)
+    parts.push(`- **口径**：直接使用 Codeforces 当前 rating，四舍五入到 100 后划分三档`)
+  } else {
+    const sources = [
+      level.practiceLevel != null ? `刷题 ${level.practiceLevel}` : '刷题 数据不足',
+      level.contestLevel != null ? `比赛 ${level.contestLevel}` : '比赛 数据不足',
+    ].join(' · ')
+    parts.push(`- **能力值**：${level.level}（${sources}）`)
+    parts.push(
+      `- **口径**：近 ${input.windowDays} 天 AC 难度中位数（刷题 60%）+ 近 ${input.windowDays} 天比赛中 AC 难度中位数（比赛 40%），不使用 rating`,
+    )
+  }
   parts.push(
     input.locked
       ? `- **题目来源**：本地已锁定（该日期目录下已有题目，多设备共用这份，不再重新抽题）`

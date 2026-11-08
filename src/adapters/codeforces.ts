@@ -43,6 +43,12 @@ interface CFProblemsetResponse {
   }
 }
 
+interface CFUserInfoResponse {
+  status: string
+  comment?: string
+  result?: Array<{ rating?: number }>
+}
+
 const VERDICT_MAP: Record<string, Verdict> = {
   OK: 'AC',
   WRONG_ANSWER: 'WA',
@@ -121,6 +127,17 @@ export function createCodeforcesAdapter(
       if (!contestId) return `https://codeforces.com/problemset/problem/${String(problemKey)}`
       const base = Number(contestId) >= 100000 ? 'gym' : 'contest'
       return `https://codeforces.com/${base}/${contestId}/problem/${index}`
+    },
+
+    async fetchCurrentRating(handle) {
+      const res = await fetchFn(
+        `${API_BASE}/user.info?handles=${encodeURIComponent(handle)}`,
+        { signal: AbortSignal.timeout(15000) },
+      )
+      if (!res.ok) throw new Error(`Codeforces user.info HTTP ${res.status}`)
+      const data = (await res.json()) as CFUserInfoResponse
+      if (data.status !== 'OK') throw new Error(`Codeforces API: ${data.comment ?? 'unknown error'}`)
+      return data.result?.[0]?.rating ?? null
     },
 
     async fetchContests() {

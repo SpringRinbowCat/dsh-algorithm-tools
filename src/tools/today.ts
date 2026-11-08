@@ -15,6 +15,7 @@ import {
   bandForDifficulty,
   bandRanges,
   estimateLevelDetail,
+  estimateLevelFromRating,
   pickBand,
   renderTodayMarkdown,
   type CandidateProblem,
@@ -129,7 +130,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
   return ctx.tools.register(defineTool({
     name: 'icpc_today',
     description:
-      '获取今日三档训练推荐。能力值由「近 N 天刷题数据 + 近 N 天比赛数据」两路估算（不使用 rating），' +
+      '获取今日三档训练推荐。能力值直接使用 Codeforces 当前 rating（四舍五入到 100），' +
       '按巩固区/同段区/挑战区推荐题目，弱项标签与比赛复盘命中优先。' +
       '会先 git pull 再读当天目录：已经有 .md 或题目就按已有安排锁定，避免多设备各抽一套；缺失时才生成并写入同名 .md。',
     parameters: {
@@ -179,7 +180,16 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       } catch { /* 拉不到比赛元数据就只用刷题侧 */ }
 
       const contestDiffs = contestAcDifficulties(host, metaMap, sinceMs, difficulties)
-      const levelInfo = estimateLevelDetail(practiceDiffs, contestDiffs)
+      let rating: number | null = null
+      try {
+        const account = store.getAccount('codeforces')
+        if (account?.handle) {
+          rating = await host.adapters['codeforces'].fetchCurrentRating?.(account.handle) ?? null
+        }
+      } catch { /* 拉不到 rating 时回退到难度中位数 */ }
+      const levelInfo = rating != null
+        ? estimateLevelFromRating(rating)
+        : estimateLevelDetail(practiceDiffs, contestDiffs)
       const level = levelInfo.level
       const ranges = bandRanges(level)
 
@@ -373,6 +383,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
           refreshedFromCf: refreshed,
           sources: {
             windowDays,
+            rating: levelInfo.rating,
             practiceLevel: levelInfo.practiceLevel,
             contestLevel: levelInfo.contestLevel,
             practiceCount: levelInfo.practiceCount,

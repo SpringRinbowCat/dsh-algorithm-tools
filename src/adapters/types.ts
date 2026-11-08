@@ -20,6 +20,8 @@ export interface PlatformAdapter {
   readonly knownIdsFilter?: boolean
   fetchUserSubmissions(handle: string, opts?: FetchOptions): Promise<NormalizedSubmission[]>
   problemUrl(problemKey: string): string
+  /** 可选：当前 rating，供今日训练直接作为能力值；不支持的平台不实现即可 */
+  fetchCurrentRating?(handle: string): Promise<number | null>
   /** 可选：拉取平台题库，供「今日三档」从未做过的题里选题；不支持的平台不实现即可 */
   fetchProblemBank?(): Promise<BankProblem[]>
 }
