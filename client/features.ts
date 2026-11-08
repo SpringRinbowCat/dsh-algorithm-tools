@@ -62,6 +62,14 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     prompt: '请先调用 icpc_sync platform=codeforces 同步我的提交记录；然后检查本地算法训练仓库，把未提交的题目代码、训练文档和计划文件提交并推送到远程仓库，只提交源码和训练文档，不要提交 exe、编译产物或临时调试文件；最后汇报新增提交数、提交了哪些代码以及推送结果。',
   },
   {
+    id: 'bank',
+    group: 'training',
+    label: '题库刷新',
+    description: '刷新 Codeforces 题库数据',
+    icon: 'problems',
+    prompt: '请调用 icpc_sync platform=codeforces bank=true 刷新 Codeforces 题库，只同步题库和提交记录，不要提交或推送本地代码；最后汇报拉取、新增、更新数量及错误。',
+  },
+  {
     id: 'reviews',
     group: 'training',
     label: 'rank 复盘',
