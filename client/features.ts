@@ -54,6 +54,14 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     prompt: '从远端 taskList 目录列出我的训练计划；如果没有计划，调用 icpc_generate_plan 以 14 天为周期生成一个系统化训练计划（生成后用 icpc_manage_plan 确认并同步到远端）。',
   },
   {
+    id: 'sync',
+    group: 'training',
+    label: '同步数据',
+    description: '同步 Codeforces 刷题记录',
+    icon: 'sync',
+    prompt: '请调用 icpc_sync platform=codeforces 同步我的提交记录，并汇报新增提交数。',
+  },
+  {
     id: 'reviews',
     group: 'training',
     label: 'rank 复盘',
