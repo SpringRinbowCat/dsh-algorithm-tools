@@ -65,6 +65,7 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
       '把发现的题号列给我（例如 A、B、C1），然后问我这场比赛对应的 Codeforces 比赛号是多少（只回一个数字）；' +
       '等我回答后再动手：把 rank/_pending/<字母>/ 重命名为 rank/<比赛号>/<比赛号><字母>/，cpp 文件名从 <字母>.cpp 改成 <比赛号><字母>.cpp，' +
       '文件头第一行的题链改成 https://codeforces.com/problemset/problem/<比赛号>/<字母>，并确认没有残留的 _pending 目录；全部改完再提交推送。' +
+      '如果这次没完成比赛号补全（我没给比赛号、重命名失败、或中途中断），必须明确提醒我 rank/_pending/ 里还留着哪些题号，不能静默跳过，也不要先把它们提交上去。' +
       '最后汇报新增提交数、提交了哪些代码、比赛号补全情况以及推送结果。',
   },
   {
