@@ -39,9 +39,9 @@ export interface Overview {
 
 export interface Stats {
   totals: { attempts: number; ac: number; acRate: number; solvedProblems: number; touched: number }
-  byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number }>
+  byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
-  weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number }>
+  weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number; solved: number }>
 }
 
 export interface ContestItem {
@@ -316,33 +316,40 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
 
 function StatsView({ data }: { data: Stats }): ReactNode {
   const t = data.totals
-  const items = data.byDifficulty.filter((d) => d.attempts > 0)
-  const total = items.reduce((sum, d) => sum + d.attempts, 0) || 1
+  type DiffItem = Stats['byDifficulty'][number]
+  const solvedItems = data.byDifficulty.filter((d) => d.solved > 0)
+  const scoreItems = data.byDifficulty.filter((d) => d.score > 0)
   const palette = ['#4ade80', '#60a5fa', '#f59e0b', '#f87171', '#a78bfa', '#f472b6', '#22d3ee', '#facc15']
   const R = 38
   const C = 2 * Math.PI * R
-  let offset = 0
-  const segs = items.map((d, i) => {
-    const pct = (d.attempts / total) * 100
-    const seg = { ...d, pct, color: palette[i % palette.length], offset }
-    offset += (pct / 100) * C
-    return seg
-  })
+
+  const makeChart = (list: DiffItem[], valueOf: (d: DiffItem) => number) => {
+    const total = list.reduce((sum, d) => sum + valueOf(d), 0)
+    let offset = 0
+    const segs = list.map((d, i) => {
+      const value = valueOf(d)
+      const pct = total > 0 ? (value / total) * 100 : 0
+      const seg = { ...d, value, pct, color: palette[i % palette.length], offset }
+      offset += (pct / 100) * C
+      return seg
+    })
+    return { total, segs }
+  }
+
+  const solvedChart = makeChart(solvedItems, (d) => d.solved)
+  const scoreChart = makeChart(scoreItems, (d) => d.score)
 
   return (
     <>
       <div className="icpc-viz__numbers">
-        <div><b>{t.ac}</b><span>AC</span></div>
-        <div><b>{t.attempts}</b><span>提交</span></div>
-        <div><b>{t.acRate}%</b><span>AC 率</span></div>
         <div><b>{t.solvedProblems}</b><span>已解决</span></div>
       </div>
 
-      <div className="icpc-viz__section">难度分布（按提交量）</div>
+      <div className="icpc-viz__section">难度分布（按已解决数）</div>
       <div className="icpc-viz__donutwrap">
         <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="难度分布扇形图">
           <circle cx="50" cy="50" r={R} fill="none" stroke="var(--dsw-alias-interactive-bg-hover)" strokeWidth="13" />
-          {segs.map((s) => (
+          {solvedChart.segs.map((s) => (
             <circle
               key={s.bucket}
               cx="50"
@@ -356,27 +363,60 @@ function StatsView({ data }: { data: Stats }): ReactNode {
               transform="rotate(-90 50 50)"
             />
           ))}
-          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{total}</text>
-          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">次提交</text>
+          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{solvedChart.total}</text>
+          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">题已解决</text>
         </svg>
         <div className="icpc-viz__lglist">
-          {segs.map((s) => (
-            <div className="icpc-viz__lg" key={s.bucket} title={`${s.attempts} 次提交 · ${s.ac} 次 AC`}>
+          {solvedChart.segs.map((s) => (
+            <div className="icpc-viz__lg" key={s.bucket} title={`已解决 ${s.solved} 题`}>
               <i style={{ background: s.color }} />
               <span className="icpc-viz__lgname">{s.bucket}</span>
               <span className="icpc-viz__lgval">{Math.round(s.pct)}%</span>
-              <span className="icpc-viz__lgac">{s.acRate}% AC</span>
+              <span className="icpc-viz__lgac">{s.solved} 题</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="icpc-viz__section">弱项（gap 越大越弱，相对你的平均 AC 率）</div>
+      <div className="icpc-viz__section">已解决题目分数分布</div>
+      <div className="icpc-viz__donutwrap">
+        <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="已解决题目分数分布扇形图">
+          <circle cx="50" cy="50" r={R} fill="none" stroke="var(--dsw-alias-interactive-bg-hover)" strokeWidth="13" />
+          {scoreChart.segs.map((s) => (
+            <circle
+              key={s.bucket}
+              cx="50"
+              cy="50"
+              r={R}
+              fill="none"
+              stroke={s.color}
+              strokeWidth="13"
+              strokeDasharray={`${(s.pct / 100) * C} ${C}`}
+              strokeDashoffset={-s.offset}
+              transform="rotate(-90 50 50)"
+            />
+          ))}
+          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{scoreChart.total}</text>
+          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">分</text>
+        </svg>
+        <div className="icpc-viz__lglist">
+          {scoreChart.segs.map((s) => (
+            <div className="icpc-viz__lg" key={s.bucket} title={`已解决题目分数 ${s.score}`}>
+              <i style={{ background: s.color }} />
+              <span className="icpc-viz__lgname">{s.bucket}</span>
+              <span className="icpc-viz__lgval">{Math.round(s.pct)}%</span>
+              <span className="icpc-viz__lgac">{s.score} 分</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="icpc-viz__section">弱项（gap 越大越弱，相对平均已解决数）</div>
       <div className="icpc-viz__tags">
         {data.weakTags.length === 0
-          ? <span className="icpc-viz__muted">样本还不够，多提交一些再看</span>
+          ? <span className="icpc-viz__muted">样本还不够，多做一些再看</span>
           : data.weakTags.map((w) => (
-            <span className="icpc-viz__tag" key={w.tag} title={`${w.attempts} 次尝试 · AC 率 ${w.acRate}%`}>
+            <span className="icpc-viz__tag" key={w.tag} title={`已解决 ${w.solved} 题 · gap ${w.gap.toFixed(1)}`}>
               {w.tag}<i>{w.gap.toFixed(1)}</i>
             </span>
           ))}
@@ -422,7 +462,7 @@ const CSS = `
 .icpc-viz__legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 10px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__swatch { width: 10px; height: 10px; border-radius: 2px; }
 .icpc-viz__total { margin-left: auto; }
-.icpc-viz__numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+.icpc-viz__numbers { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 12px; }
 .icpc-viz__numbers div { padding: 8px 6px; text-align: center; border-radius: 8px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); }
 .icpc-viz__numbers b { display: block; font-size: 16px; }
 .icpc-viz__numbers span { font-size: 10px; color: var(--dsw-alias-label-caption); }

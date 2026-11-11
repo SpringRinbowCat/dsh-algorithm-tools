@@ -203,9 +203,9 @@ export function acStreak(store: IcpcStore, todayStr: string): { current: number;
 
 export interface StatsSnapshot {
   totals: { attempts: number; ac: number; acRate: number; solvedProblems: number; touched: number }
-  byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number }>
+  byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
-  weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number }>
+  weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number; solved: number }>
 }
 
 /** 数据概览（客户端右侧视图用的快照，和 icpc_stats 同源） */
@@ -226,7 +226,7 @@ export function buildStats(store: IcpcStore): StatsSnapshot {
     weakTags: weakness.items
       .filter((i) => i.gap > 0)
       .slice(0, 6)
-      .map((i) => ({ tag: i.tag, attempts: i.attempts, acRate: i.acRate, gap: i.gap })),
+      .map((i) => ({ tag: i.tag, attempts: i.attempts, acRate: i.acRate, gap: i.gap, solved: i.solved })),
   }
 }
 

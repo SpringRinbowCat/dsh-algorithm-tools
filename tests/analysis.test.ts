@@ -46,6 +46,10 @@ describe('computeOverall', () => {
     assert.equal(stats.byPlatform.length, 2)
     assert.equal(stats.byPlatform[0].platform, 'codeforces')
     assert.equal(stats.byPlatform[0].attempts, 2)
+    const bucket = stats.byDifficulty.find((d) => d.bucket === '1200-1399')
+    assert.ok(bucket)
+    assert.equal(bucket!.solved, 1)
+    assert.equal(bucket!.score, 1200)
   })
 
   it('respects platform filter', () => {
@@ -77,9 +81,11 @@ describe('computeWeakness', () => {
     const graphItem = profile.items.find((i) => i.tag === 'graph')
     assert.ok(graphItem)
     assert.ok(graphItem!.gap > 0)
+    assert.equal(graphItem!.gap, 2.5)
     const dpItem = profile.items.find((i) => i.tag === 'dp')
     assert.ok(dpItem)
     assert.ok(dpItem!.gap <= 0)
+    assert.equal(dpItem!.gap, -2.5)
   })
 })
 

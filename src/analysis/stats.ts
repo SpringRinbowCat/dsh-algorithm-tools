@@ -32,6 +32,8 @@ export interface TagStat extends CountStat {
 
 export interface DifficultyStat extends CountStat {
   bucket: string
+  solved: number
+  score: number
 }
 
 export interface PlatformStat extends CountStat {
@@ -80,22 +82,28 @@ export function computeOverall(rows: SubmissionRow[], filter: StatsFilter = {}):
   const solvedSet = new Set<string>()
   const solvedByTag = new Map<string, Set<string>>()
   const solvedByPlatform = new Map<PlatformId, Set<string>>()
+  const solvedByDifficulty = new Map<string, Map<string, number>>()
 
   for (const r of filtered) {
     const isAc = r.verdict === 'AC'
+    const key = `${r.platform}:${r.problemKey}`
+    const bucket = bucketForDifficulty(r.difficulty)
     bump(byPlatform, r.platform, isAc)
-    bump(byDifficulty, bucketForDifficulty(r.difficulty), isAc)
+    bump(byDifficulty, bucket, isAc)
     for (const tag of filterNoiseTags(r.tags)) {
       bump(byTag, tag, isAc)
       if (isAc) {
         if (!solvedByTag.has(tag)) solvedByTag.set(tag, new Set())
-        solvedByTag.get(tag)!.add(`${r.platform}:${r.problemKey}`)
+        solvedByTag.get(tag)!.add(key)
       }
     }
     if (isAc) {
-      solvedSet.add(`${r.platform}:${r.problemKey}`)
+      solvedSet.add(key)
       if (!solvedByPlatform.has(r.platform)) solvedByPlatform.set(r.platform, new Set())
       solvedByPlatform.get(r.platform)!.add(r.problemKey)
+      if (!solvedByDifficulty.has(bucket)) solvedByDifficulty.set(bucket, new Map())
+      const solved = solvedByDifficulty.get(bucket)!
+      if (!solved.has(key)) solved.set(key, r.difficulty ?? 0)
     }
   }
 
@@ -115,7 +123,15 @@ export function computeOverall(rows: SubmissionRow[], filter: StatsFilter = {}):
       ...toStat(s),
       solved: solvedByPlatform.get(platform)?.size ?? 0,
     })),
-    byDifficulty: [...byDifficulty.entries()].map(([bucket, s]) => ({ bucket, ...toStat(s) })),
+    byDifficulty: [...byDifficulty.entries()].map(([bucket, s]) => {
+      const solved = solvedByDifficulty.get(bucket) ?? new Map<string, number>()
+      return {
+        bucket,
+        ...toStat(s),
+        solved: solved.size,
+        score: [...solved.values()].reduce((sum, value) => sum + value, 0),
+      }
+    }),
     byTag: [...byTag.entries()].map(([tag, s]) => ({
       tag,
       ...toStat(s),

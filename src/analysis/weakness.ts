@@ -41,32 +41,52 @@ export function computeWeakness(rows: SubmissionRow[], opts: WeaknessOptions = {
     }
   }
 
+  const avgSolved = tagMap.size
+    ? [...tagMap.keys()].reduce((sum, tag) => sum + (solvedByTag.get(tag)?.size ?? 0), 0) / tagMap.size
+    : 0
+
   const items: WeaknessItem[] = [...tagMap.entries()]
-    .map(([tag, s]) => ({
-      tag,
-      attempts: s.attempts,
-      ac: s.ac,
-      acRate: rate(s.attempts, s.ac),
-      avgAcRate,
-      gap: round2(avgAcRate - rate(s.attempts, s.ac)),
-      solved: solvedByTag.get(tag)?.size ?? 0,
-    }))
+    .map(([tag, s]) => {
+      const solved = solvedByTag.get(tag)?.size ?? 0
+      return {
+        tag,
+        attempts: s.attempts,
+        ac: s.ac,
+        acRate: rate(s.attempts, s.ac),
+        avgAcRate,
+        gap: round2(avgSolved - solved),
+        solved,
+      }
+    })
     .filter((i) => i.attempts >= minAttempts)
     .sort((a, b) => b.gap - a.gap)
     .slice(0, topN)
 
   const diffMap = new Map<string, MutableStat>()
+  const solvedByDiff = new Map<string, Set<string>>()
   for (const r of rows) {
-    bump(diffMap, bucketForDifficulty(r.difficulty), r.verdict === 'AC')
+    const bucket = bucketForDifficulty(r.difficulty)
+    bump(diffMap, bucket, r.verdict === 'AC')
+    if (r.verdict === 'AC') {
+      if (!solvedByDiff.has(bucket)) solvedByDiff.set(bucket, new Set())
+      solvedByDiff.get(bucket)!.add(`${r.platform}:${r.problemKey}`)
+    }
   }
+  const avgSolvedDiff = diffMap.size
+    ? [...diffMap.keys()].reduce((sum, bucket) => sum + (solvedByDiff.get(bucket)?.size ?? 0), 0) / diffMap.size
+    : 0
   const byDifficulty: DifficultyWeakness[] = [...diffMap.entries()]
-    .map(([bucket, s]) => ({
-      bucket,
-      attempts: s.attempts,
-      ac: s.ac,
-      acRate: rate(s.attempts, s.ac),
-      gap: round2(avgAcRate - rate(s.attempts, s.ac)),
-    }))
+    .map(([bucket, s]) => {
+      const solved = solvedByDiff.get(bucket)?.size ?? 0
+      return {
+        bucket,
+        attempts: s.attempts,
+        ac: s.ac,
+        acRate: rate(s.attempts, s.ac),
+        gap: round2(avgSolvedDiff - solved),
+        solved,
+      }
+    })
     .filter((i) => i.attempts >= minAttempts)
     .sort((a, b) => b.gap - a.gap)
 

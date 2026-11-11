@@ -12,7 +12,7 @@ export function registerStatsTool(host: IcpcHost, ctx: Context): () => void {
     name: 'icpc_stats',
     description:
       '查询刷题统计。metric=overall 总体统计（尝试/AC/AC率/各平台/各难度/各标签）；' +
-      'metric=weakness 弱项画像（各标签/难度桶相对自身均值的偏差，gap>0 为弱项）；' +
+      'metric=weakness 弱项画像（各标签/难度桶的已解决数相对平均值的缺口，gap>0 为弱项）；' +
       'metric=trend 最近 N 周趋势。',
     parameters: {
       metric: { type: 'string', enum: ['overall', 'weakness', 'trend'], default: 'overall' },

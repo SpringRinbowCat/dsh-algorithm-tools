@@ -37,6 +37,7 @@ export interface DifficultyWeakness {
   ac: number
   acRate: number
   gap: number
+  solved: number
 }
 
 export interface WeaknessProfile {

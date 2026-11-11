@@ -137,7 +137,7 @@ export function buildWeeklyPlan(
     const weekStart = addDays(startDate, w * 7)
     const weekEnd = addDays(weekStart, 6)
     const rationale = pick.gap > 0
-      ? `${pick.tag} 的 AC 率比你的平均低 ${pick.gap.toFixed(1)} 个百分点（${pick.attempts} 次尝试），这周集中补它。`
+      ? `${pick.tag} 的已解决数比你的平均少 ${pick.gap.toFixed(1)} 题（${pick.attempts} 次尝试），这周集中补它。`
       : `巩固 ${pick.tag}：上一轮已经练过，这周用更高一档难度再走一遍。`
     weeks.push({ week: w + 1, startDate: weekStart, endDate: weekEnd, direction, tags: [pick.tag], rationale })
 
