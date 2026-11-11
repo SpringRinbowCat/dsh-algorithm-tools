@@ -2,7 +2,7 @@
 
 算法学习训练台 — DeepSeek Harness 插件。
 
-将 [icpc-workbench](https://github.com/ZF3373/icpc-workbench) 的核心训练能力（刷题同步、弱项分析、今日推荐、训练计划、间隔复习、模板库、赛事中心、打卡）封装为 dsh agent 工具，让 AI agent 能直接帮选手完成训练全流程。
+将 [icpc-workbench](https://github.com/ZF3373/icpc-workbench) 的核心训练能力（刷题同步、弱项分析、今日推荐、训练计划、Rank 复盘、赛事中心、打卡）封装为 dsh agent 工具，让 AI agent 能直接帮选手完成训练全流程。
 
 ## 安装
 
@@ -27,14 +27,9 @@ dsh plugin --profile desktop add github:SpringRinbowCat/dsh-algorithm-tools
 dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 ```
 
-## 复习库是手动的
+## 复盘按比赛
 
-训练/同步**不再自动把本地题目收进复习库**（那是旧流程的冗余，训练质量已经改用 `icpc_review action=contest` 的 Rank 复盘来判断）。
-
-需要复习时显式操作：
-
-- `icpc_review action=add platform=codeforces problemKey=2020A` 单题入库
-- `icpc_review action=scan` 扫一遍本地目录，把没入库的题批量收进来（默认扫 `localRoot`）
+训练质量用 `icpc_review action=contest` 的 Rank 复盘判断，不再维护独立的间隔复习库。
 
 ## 冲突策略：远端为准
 
@@ -116,21 +111,18 @@ dsh-algorithm-tools/
 │   │   ├── trend.ts          # 12 周趋势（ISO 周键，空周补 0）
 │   │   ├── tags.ts           # 标签净化（过滤赛事/年份/地区等噪声标签）
 │   │   └── today.ts          # 今日三档选题（当前 rating 能力值、落档、Markdown 渲染）
-│   ├── reviews/
-│   │   └── schedule.ts       # 间隔复习调度（1/3/7/14/30/60 天阶梯，hard/ok/easy 调档）
 │   ├── plans/
-│   │   └── planService.ts    # 训练计划服务（AI 生成 + 模板降级 + JSON 解析容错）
-│   ├── templates/
-│   │   ├── curriculum.ts     # 114 课算法模板大纲（数据文件）
-│   │   └── progress.ts       # 学习进度管理（todo/learning/mastered + 下一课推荐）
+│   │   ├── planService.ts    # 计划 JSON 解析与日期工具
+│   │   ├── weekly.ts         # 每周固定方向的训练计划生成
+│   │   └── taskList.ts       # taskList Markdown 读写
 │   ├── tools/                # 11 个 agent 工具
 │   │   ├── helpers.ts        # textOutput / num / str 辅助
 │   │   ├── sync.ts           # icpc_sync — 同步刷题记录
+│   │   ├── sync-all.ts       # icpc_sync_all — 同步并提交本地仓库
 │   │   ├── stats.ts          # icpc_stats — 统计分析
 │   │   ├── today.ts          # icpc_today — 今日三档训练
 │   │   ├── plans.ts          # icpc_generate_plan + icpc_manage_plan
-│   │   ├── reviews.ts        # icpc_review — 间隔复习库
-│   │   ├── templates.ts      # icpc_templates — 模板库
+│   │   ├── reviews.ts        # icpc_review — Rank 复盘
 │   │   ├── contests.ts       # icpc_contests — 赛事中心
 │   │   ├── checkins.ts       # icpc_checkin — 日历打卡
 │   │   ├── settings.ts       # icpc_settings — 设置
@@ -179,10 +171,9 @@ AI 配置也可运行时通过 `icpc_settings` 工具修改（持久化到 JSON�
 | `icpc_sync_all` | 同步 CF 提交并提交/推送本地训练仓库；`rank/_pending` 先返回题号等比赛号 |
 | `icpc_stats` | 统计分析：overall / weakness / trend |
 | `icpc_today` | 今日三档训练推荐（巩固/同段/挑战；能力值取当前 rating；当天目录已有题就锁定；自动写 `<日期>.md`） |
-| `icpc_generate_plan` | AI 生成训练计划（无 key 降级模板） |
+| `icpc_generate_plan` | 生成 14 天系统化训练计划（每周固定方向） |
 | `icpc_manage_plan` | 计划管理：list/detail/checkin/uncheck/delete/import/update_task/delete_task |
-| `icpc_review` | 间隔复习库：list/add/feedback/remove |
-| `icpc_templates` | 114 课模板库：browse/next/set_status/set_content/自建/例题 |
+| `icpc_review` | Rank 复盘：近期比赛与单场复盘 |
 | `icpc_contests` | 多平台赛事（CF+AtCoder 聚合） |
 | `icpc_checkin` | 日历打卡：streak/month/date/checkin/uncheck |
 | `icpc_settings` | 设置：get/set_account/set_ai/set_adapter/set_cookies/set_reminder |

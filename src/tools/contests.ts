@@ -1,5 +1,5 @@
 import type { IcpcHost } from '../index.ts'
-import type { Context, ToolDefinition } from '../dsh-compat.ts'
+import type { Context } from '../dsh-compat.ts'
 import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT, num } from './helpers.ts'
 import type { ContestInfo, PlatformId } from '../types.ts'

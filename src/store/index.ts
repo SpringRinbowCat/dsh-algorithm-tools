@@ -4,19 +4,16 @@
  */
 
 import type { FsService } from '../dsh-compat.ts'
-import type { PlatformId, Verdict } from '../types.ts'
+import type { PlatformId } from '../types.ts'
 import type {
   ProblemRecord,
   SubmissionRecord,
   PlanRecord,
   PlanTaskRecord,
-  TemplateProgressRecord,
-  CustomTemplateRecord,
   SettingsRecord,
   StoreState,
 } from './schema.ts'
 import { defaultState } from './schema.ts'
-import { localDay } from '../util/local-date.ts'
 // 难度分桶统一由 analysis/stats 提供，避免重复定义
 import { bucketForDifficulty } from '../analysis/stats.ts'
 
@@ -46,16 +43,13 @@ export class IcpcStore {
   private dataDir: string
   private saveTimer: ReturnType<typeof setTimeout> | null = null
   private nextPlanId = 1
-  private nextReviewId = 1
   private nextTaskId = 1
-  private nextCustomId = 1
   /** 提交索引：`${platform}:${problemKey}` → SubmissionRecord[]，避免 O(n×m) 全量扫描 */
   private subIndex: Map<string, SubmissionRecord[]> = new Map()
   /** 排序后的提交缓存（按时间降序），插入时追加、读取时直接用 */
   private sortedSubs: SubmissionRecord[] | null = null
   /** load() 完成信号：任何写盘（flush）必须等它，避免用空 state 覆盖磁盘上的真实数据 */
   private ready: Promise<void> = Promise.resolve()
-  private loaded = false
 
   constructor(fs: FsService, dataDir: string) {
     this.fs = fs
@@ -120,11 +114,7 @@ export class IcpcStore {
         if (t.id >= this.nextTaskId) this.nextTaskId = t.id + 1
       }
     }
-    for (const c of this.state.customTemplates) {
-      if (c.id >= this.nextCustomId) this.nextCustomId = c.id + 1
-    }
     this.rebuildSubIndex()
-    this.loaded = true
   }
 
   scheduleSave(): void {
@@ -652,91 +642,4 @@ export class IcpcStore {
     return { current, longest, totalDays: days.length }
   }
 
-  // ---------- Template Progress ----------
-
-  getTemplateProgress(templateId: string): TemplateProgressRecord | undefined {
-    return this.state.templateProgress.find((t) => t.templateId === templateId)
-  }
-
-  setTemplateProgress(templateId: string, patch: Partial<TemplateProgressRecord>): void {
-    const existing = this.getTemplateProgress(templateId)
-    if (existing) {
-      Object.assign(existing, patch)
-    } else {
-      this.state.templateProgress.push({
-        templateId,
-        status: 'todo',
-        note: null,
-        code: null,
-        idea: null,
-        complexity: null,
-        url: null,
-        masteredAt: null,
-        ...patch,
-      })
-    }
-    this.scheduleSave()
-  }
-
-  getAllProgress(): Map<string, TemplateProgressRecord> {
-    return new Map(this.state.templateProgress.map((t) => [t.templateId, t]))
-  }
-
-  // ---------- Custom Templates ----------
-
-  createCustomTemplate(input: Omit<CustomTemplateRecord, 'id' | 'createdAt' | 'updatedAt'>): CustomTemplateRecord {
-    const record: CustomTemplateRecord = {
-      ...input,
-      id: this.nextCustomId++,
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
-    }
-    this.state.customTemplates.push(record)
-    this.scheduleSave()
-    return record
-  }
-
-  getCustomTemplate(id: number): CustomTemplateRecord | undefined {
-    return this.state.customTemplates.find((c) => c.id === id)
-  }
-
-  updateCustomTemplate(id: number, patch: Partial<CustomTemplateRecord>): boolean {
-    const c = this.getCustomTemplate(id)
-    if (!c) return false
-    Object.assign(c, patch)
-    c.updatedAt = new Date().toISOString()
-    this.scheduleSave()
-    return true
-  }
-
-  deleteCustomTemplate(id: number): boolean {
-    const idx = this.state.customTemplates.findIndex((c) => c.id === id)
-    if (idx < 0) return false
-    this.state.customTemplates.splice(idx, 1)
-    // 清理学习进度
-    this.state.templateProgress = this.state.templateProgress.filter(
-      (t) => t.templateId !== `c-${id}`,
-    )
-    this.scheduleSave()
-    return true
-  }
-
-  listCustomTemplates(): CustomTemplateRecord[] {
-    return [...this.state.customTemplates].sort((a, b) => a.id - b.id)
-  }
-
-  /** 例题练习状态：是否已入库、是否已 AC */
-  loadExampleStatus(pairs: Array<{ platform: string; key: string }>): Map<string, { inBank: boolean; ac: boolean }> {
-    const acKeys = this.getAcKeys()
-    const problemKeys = new Set(this.state.problems.map((p) => `${p.platform}:${p.problemKey}`))
-    const map = new Map<string, { inBank: boolean; ac: boolean }>()
-    for (const { platform, key } of pairs) {
-      const k = `${platform}:${key}`
-      map.set(k, {
-        inBank: problemKeys.has(k),
-        ac: acKeys.has(k),
-      })
-    }
-    return map
-  }
 }

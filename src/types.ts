@@ -45,8 +45,6 @@ export interface WeaknessProfile {
   generatedAt: string
 }
 
-export type ReviewFeedback = 'hard' | 'ok' | 'easy'
-
 export type TodayBandKey = 'consolidation' | 'core' | 'challenge'
 
 export interface TodayProblem {
@@ -58,22 +56,6 @@ export interface TodayProblem {
   url: string | null
   tags: string[]
   weakTags: string[]
-}
-
-export interface TodayBand {
-  key: TodayBandKey
-  label: string
-  description: string
-  range: [number | null, number | null]
-  problems: TodayProblem[]
-  pool: number
-}
-
-export interface TodayPlan {
-  date: string
-  level: number
-  bands: TodayBand[]
-  planProgress: { total: number; checked: number } | null
 }
 
 export interface ContestInfo {

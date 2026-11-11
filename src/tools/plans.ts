@@ -1,5 +1,5 @@
 import type { IcpcHost } from '../index.ts'
-import type { Context, ToolDefinition } from '../dsh-compat.ts'
+import type { Context } from '../dsh-compat.ts'
 import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT, num, str } from './helpers.ts'
 import { parsePlanJson, today, addDays, TASK_KINDS } from '../plans/planService.ts'

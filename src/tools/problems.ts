@@ -1,8 +1,7 @@
 import type { IcpcHost } from '../index.ts'
-import type { Context, ToolDefinition } from '../dsh-compat.ts'
+import type { Context } from '../dsh-compat.ts'
 import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT, str, num } from './helpers.ts'
-import { bucketForDifficulty } from '../store/index.ts'
 
 export function registerProblemTool(host: IcpcHost, ctx: Context): () => void {
   return ctx.tools.register(defineTool({
@@ -34,6 +33,6 @@ export function registerProblemTool(host: IcpcHost, ctx: Context): () => void {
       })
       return { ok: true, problems: result }
     },
-    presentCall: (args) => ({ card: 'generic', title: '题目浏览' }),
+    presentCall: () => ({ card: 'generic', title: '题目浏览' }),
   }))
 }

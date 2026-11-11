@@ -1,7 +1,7 @@
 /**
  * dsh-algorithm-tools — 算法学习训练插件 for DeepSeek Harness
  *
- * Host 半边：按会话激活 13 个 agent tools。
+ * Host 半边：按会话激活 agent tools。
  * 数据层用 JSON 文件持久化（替代 SQLite），通过 Node fs 落盘到 DSH_HOME/.icpc-data。
  * 适配层用 fetch 调公开 API（Codeforces + AtCoder）。
  *
@@ -34,7 +34,6 @@ export interface IcpcHost {
   adapters: Record<string, PlatformAdapter & ContestAdapter>
   /** 本地题目根目录（例如 /Volumes/kingston/codeforces） */
   localRoot: string
-  getAiConfig: () => { enabled: boolean; baseURL: string; apiKey: string; model: string }
 }
 
 /**
@@ -95,17 +94,7 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
     atcoder: createAtcoderAdapter(),
   }
 
-  const getAiConfig = () => {
-    const s = store.getSettings()
-    return {
-      enabled: s.ai.enabled,
-      baseURL: s.ai.baseURL,
-      apiKey: process.env.AI_API_KEY ?? s.ai.apiKey,
-      model: s.ai.model,
-    }
-  }
-
-  const host: IcpcHost = { store, adapters, localRoot, getAiConfig }
+  const host: IcpcHost = { store, adapters, localRoot }
 
   ctx.effect(() => () => { void store.flush() })
 
