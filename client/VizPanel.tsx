@@ -38,7 +38,7 @@ export interface Overview {
 }
 
 export interface Stats {
-  totals: { attempts: number; ac: number; acRate: number; solvedProblems: number; touched: number }
+  rating: number | null
   byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
   byTag: Array<{ tag: string; solved: number; weight: number; gap: number }>
@@ -316,7 +316,6 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
 }
 
 function StatsView({ data }: { data: Stats }): ReactNode {
-  const t = data.totals
   const solvedItems = data.byDifficulty.filter((d) => d.solved > 0)
   const tagItems = data.byTag
   const palette = ['#4ade80', '#60a5fa', '#f59e0b', '#f87171', '#a78bfa', '#f472b6', '#22d3ee', '#facc15']
@@ -341,10 +340,6 @@ function StatsView({ data }: { data: Stats }): ReactNode {
 
   return (
     <>
-      <div className="icpc-viz__numbers">
-        <div><b>{t.solvedProblems}</b><span>已解决</span></div>
-      </div>
-
       <div className="icpc-viz__section">难度分布（按已解决数）</div>
       <div className="icpc-viz__donutwrap">
         <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="难度分布扇形图">
@@ -364,7 +359,7 @@ function StatsView({ data }: { data: Stats }): ReactNode {
             />
           ))}
           <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{solvedChart.total}</text>
-          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">题已解决</text>
+          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">已解决</text>
         </svg>
         <div className="icpc-viz__lglist">
           {solvedChart.segs.map((s) => (
@@ -396,8 +391,8 @@ function StatsView({ data }: { data: Stats }): ReactNode {
               transform="rotate(-90 50 50)"
             />
           ))}
-          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{tagChart.total}</text>
-          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">标签计数</text>
+          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{data.rating ?? '—'}</text>
+          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">rating</text>
         </svg>
         <div className="icpc-viz__lglist">
           {tagChart.segs.map((s) => (
@@ -466,10 +461,6 @@ const CSS = `
 .icpc-viz__legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 10px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__swatch { width: 10px; height: 10px; border-radius: 2px; }
 .icpc-viz__total { margin-left: auto; }
-.icpc-viz__numbers { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 12px; }
-.icpc-viz__numbers div { padding: 8px 6px; text-align: center; border-radius: 8px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); }
-.icpc-viz__numbers b { display: block; font-size: 16px; }
-.icpc-viz__numbers span { font-size: 10px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__section { margin-top: 12px; font-size: 11px; font-weight: 600; color: var(--dsw-alias-label-caption); }
 .icpc-viz__donutwrap { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
 .icpc-viz__donut { width: 96px; height: 96px; flex: none; color: var(--dsw-alias-label-primary); }

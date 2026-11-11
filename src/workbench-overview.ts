@@ -202,6 +202,7 @@ export function acStreak(store: IcpcStore, todayStr: string): { current: number;
 }
 
 export interface StatsSnapshot {
+  rating: number | null
   totals: { attempts: number; ac: number; acRate: number; solvedProblems: number; touched: number }
   byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
@@ -210,7 +211,7 @@ export interface StatsSnapshot {
 }
 
 /** 数据概览（客户端右侧视图用的快照，和 icpc_stats 同源） */
-export function buildStats(store: IcpcStore, level?: number | null): StatsSnapshot {
+export function buildStats(store: IcpcStore, level?: number | null, rating?: number | null): StatsSnapshot {
   const rows = store.getSubmissionRows()
   const overall = computeOverall(rows)
   const allTags = store.getAllTags()
@@ -222,6 +223,7 @@ export function buildStats(store: IcpcStore, level?: number | null): StatsSnapsh
     includeUnseenTags: true,
   })
   return {
+    rating: rating ?? null,
     totals: {
       attempts: overall.attempts,
       ac: overall.ac,
@@ -260,7 +262,7 @@ function trustedOrigin(req: IncomingMessage): boolean {
   return origin === `http://${host}` || origin === `https://${host}`
 }
 
-export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown) => () => void }; effect: (fn: () => void | (() => void)) => unknown }, store: IcpcStore, getLevel?: () => Promise<number | null>): void {
+export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown) => () => void }; effect: (fn: () => void | (() => void)) => unknown }, store: IcpcStore, getProfile?: () => Promise<{ level: number | null; rating: number | null }>): void {
   if (!ctx.webServer) return
   ctx.effect(() => {
     const off = ctx.webServer!.register({
@@ -306,8 +308,10 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
           return
         }
         try {
-          const level = getLevel ? await getLevel().catch(() => null) : null
-          sendJson(res, 200, { ok: true, stats: buildStats(store, level) })
+          const profile = getProfile
+            ? await getProfile().catch(() => ({ level: null, rating: null }))
+            : { level: null, rating: null }
+          sendJson(res, 200, { ok: true, stats: buildStats(store, profile.level, profile.rating) })
         } catch (e) {
           sendJson(res, 500, { ok: false, error: (e as Error).message })
         }

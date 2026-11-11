@@ -101,9 +101,12 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
   registerActivationRoute(ctx, host)
   registerOverviewRoute(ctx, store, async () => {
     const account = store.getAccount('codeforces')
-    if (!account?.handle) return null
+    if (!account?.handle) return { level: null, rating: null }
     const rating = await adapters.codeforces.fetchCurrentRating?.(account.handle) ?? null
-    return rating == null ? null : Math.round(rating / 100) * 100
+    return {
+      level: rating == null ? null : Math.round(rating / 100) * 100,
+      rating,
+    }
   })
   registerSyncRoute(ctx, host)
   registerContestsRoute(ctx, host)
