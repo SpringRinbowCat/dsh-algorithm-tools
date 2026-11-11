@@ -42,7 +42,6 @@ export interface Stats {
   byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
   byTag: Array<{ tag: string; solved: number; weight: number; gap: number }>
-  weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number; solved: number }>
 }
 
 export interface ContestItem {
@@ -316,6 +315,7 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
 }
 
 function StatsView({ data }: { data: Stats }): ReactNode {
+  const [showAllTags, setShowAllTags] = useState(false)
   const solvedItems = data.byDifficulty.filter((d) => d.solved > 0)
   const tagItems = data.byTag
   const palette = ['#4ade80', '#60a5fa', '#f59e0b', '#f87171', '#a78bfa', '#f472b6', '#22d3ee', '#facc15']
@@ -340,7 +340,7 @@ function StatsView({ data }: { data: Stats }): ReactNode {
 
   return (
     <>
-      <div className="icpc-viz__section">难度分布（按已解决数）</div>
+      <div className="icpc-viz__section">难度分布</div>
       <div className="icpc-viz__donutwrap">
         <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="难度分布扇形图">
           <circle cx="50" cy="50" r={R} fill="none" stroke="var(--dsw-alias-interactive-bg-hover)" strokeWidth="13" />
@@ -373,7 +373,7 @@ function StatsView({ data }: { data: Stats }): ReactNode {
         </div>
       </div>
 
-      <div className="icpc-viz__section">题目标签分布（按已解决数）</div>
+      <div className="icpc-viz__section">题目标签分布</div>
       <div className="icpc-viz__donutwrap">
         <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="题目标签分布扇形图">
           <circle cx="50" cy="50" r={R} fill="none" stroke="var(--dsw-alias-interactive-bg-hover)" strokeWidth="13" />
@@ -395,7 +395,7 @@ function StatsView({ data }: { data: Stats }): ReactNode {
           <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">rating</text>
         </svg>
         <div className="icpc-viz__lglist">
-          {tagChart.segs.map((s) => (
+          {(showAllTags ? tagChart.segs : tagChart.segs.slice(0, 6)).map((s) => (
             <div
               className="icpc-viz__lg"
               key={s.key}
@@ -407,18 +407,12 @@ function StatsView({ data }: { data: Stats }): ReactNode {
               <span className="icpc-viz__lgac">{s.solved} 题</span>
             </div>
           ))}
+          {tagChart.segs.length > 6 && (
+            <button type="button" className="icpc-viz__more" onClick={() => setShowAllTags((v) => !v)}>
+              {showAllTags ? '收起' : `展开全部（${tagChart.segs.length}）`}
+            </button>
+          )}
         </div>
-      </div>
-
-      <div className="icpc-viz__section">弱项（gap 越大越弱，相对平均已解决数）</div>
-      <div className="icpc-viz__tags">
-        {data.weakTags.length === 0
-          ? <span className="icpc-viz__muted">样本还不够，多做一些再看</span>
-          : data.weakTags.map((w) => (
-            <span className="icpc-viz__tag" key={w.tag} title={`已解决 ${w.solved} 题 · gap ${w.gap.toFixed(1)}`}>
-              {w.tag}<i>{w.gap.toFixed(1)}</i>
-            </span>
-          ))}
       </div>
     </>
   )
@@ -470,9 +464,7 @@ const CSS = `
 .icpc-viz__lgname { color: var(--dsw-alias-label-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .icpc-viz__lgval { color: var(--dsw-alias-label-primary); }
 .icpc-viz__lgac { color: var(--dsw-alias-label-caption); }
-.icpc-viz__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.icpc-viz__tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; font-size: 10px; border-radius: 999px; background: var(--dsw-alias-bg-layer-2, var(--dsw-alias-interactive-bg-hover)); border: 1px solid var(--dsw-alias-border-l4); }
-.icpc-viz__tag i { font-style: normal; color: #d97706; }
+.icpc-viz__more { margin-top: 4px; padding: 2px 0; border: 0; background: transparent; color: var(--dsw-alias-label-secondary); font-size: 10px; text-align: left; cursor: pointer; }
 .icpc-viz__muted { font-size: 11px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__contests { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .icpc-viz__contests li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11px; }

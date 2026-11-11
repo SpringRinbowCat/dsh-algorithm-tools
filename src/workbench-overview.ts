@@ -207,7 +207,6 @@ export interface StatsSnapshot {
   byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
   byTag: Array<{ tag: string; solved: number; weight: number; gap: number }>
-  weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number; solved: number }>
 }
 
 /** 数据概览（客户端右侧视图用的快照，和 icpc_stats 同源） */
@@ -242,10 +241,6 @@ export function buildStats(store: IcpcStore, level?: number | null, rating?: num
         gap: i.gap,
       })),
     platforms: overall.byPlatform,
-    weakTags: weakness.items
-      .filter((i) => i.gap > 0 && i.attempts >= 5)
-      .slice(0, 6)
-      .map((i) => ({ tag: i.tag, attempts: i.attempts, acRate: i.acRate, gap: i.gap, solved: i.solved })),
   }
 }
 
