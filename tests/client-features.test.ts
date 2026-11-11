@@ -14,14 +14,9 @@ describe('workbench features', () => {
     for (const feature of WORKBENCH_FEATURES) assert.ok(groups.has(feature.group))
   })
 
-  it('maps every non-assistant feature to a tool prompt', () => {
+  it('maps every feature to a tool prompt', () => {
     for (const feature of WORKBENCH_FEATURES) {
-      if (feature.id === 'assistant') continue
       assert.match(featurePrompt(feature.id), /icpc_/)
     }
-  })
-
-  it('rejects the assistant prompt lookup', () => {
-    assert.throws(() => featurePrompt('assistant'), /no prompt/i)
   })
 })

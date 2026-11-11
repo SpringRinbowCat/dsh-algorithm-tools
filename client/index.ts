@@ -96,9 +96,6 @@ function registerNativeSidebar(ctx: ClientCtx): () => void {
       {
         name: 'sidebar.right.pane.tab',
         key: TAB_ID,
-        inject: () => ({
-          collapseSidebar: () => ctx.sidebarRight.toggleExpanded(),
-        }),
       },
       WorkbenchPanel,
     ),
@@ -122,7 +119,6 @@ function BetterSidebarWorkbenchTab(props: {
   return createElement(WorkbenchPanel, {
     sessionId: props.scope.sessionId,
     inputActions: createConversationInputActions(props.ctx, props.scope.sessionId),
-    collapseSidebar: () => props.ctx.sidebarRight.toggleExpanded(),
   })
 }
 

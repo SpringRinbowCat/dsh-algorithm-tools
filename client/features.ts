@@ -1,18 +1,10 @@
 export type FeatureGroup = 'training'
 export type FeatureIcon =
-  | 'assistant'
-  | 'overview'
   | 'today'
   | 'plans'
   | 'reviews'
-  | 'templates'
   | 'problems'
   | 'sync'
-  | 'import'
-  | 'export'
-  | 'checkins'
-  | 'contests'
-  | 'settings'
 
 export interface WorkbenchFeature {
   id: string
@@ -20,7 +12,7 @@ export interface WorkbenchFeature {
   label: string
   description: string
   icon: FeatureIcon
-  prompt?: string
+  prompt: string
   /** true = 只通过卡片里的按钮触发，不出现在右侧功能列表里 */
   hidden?: boolean
 }
@@ -30,13 +22,6 @@ export const FEATURE_GROUPS: ReadonlyArray<{ id: FeatureGroup; label: string }> 
 ]
 
 export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
-  {
-    id: 'assistant',
-    group: 'training',
-    label: 'AI 助手',
-    description: '使用当前 Harness 对话',
-    icon: 'assistant',
-  },
   {
     id: 'today',
     group: 'training',
@@ -90,6 +75,6 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
 
 export function featurePrompt(id: string): string {
   const feature = WORKBENCH_FEATURES.find((item) => item.id === id)
-  if (!feature?.prompt) throw new Error(`feature ${id} has no prompt`)
+  if (!feature) throw new Error(`feature ${id} not found`)
   return feature.prompt
 }

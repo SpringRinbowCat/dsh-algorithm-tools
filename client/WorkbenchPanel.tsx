@@ -17,13 +17,11 @@ export interface InputActions {
 export interface WorkbenchPanelProps {
   sessionId?: string
   inputActions?: InputActions
-  collapseSidebar?: () => void
 }
 
 export function WorkbenchPanel({
   sessionId,
   inputActions,
-  collapseSidebar,
 }: WorkbenchPanelProps): ReactNode {
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -107,10 +105,6 @@ export function WorkbenchPanel({
     setError(null)
     try {
       await activateWorkbench(sessionId)
-      if (feature.id === 'assistant') {
-        collapseSidebar?.()
-        return
-      }
       if (!inputActions) {
         setError('Harness 输入框不可用')
         return
@@ -164,7 +158,7 @@ export function WorkbenchPanel({
                   className="icpc-workbench__item"
                   type="button"
                   key={feature.id}
-                  disabled={busy !== null || !sessionId || (!inputActions && feature.id !== 'assistant')}
+                  disabled={busy !== null || !sessionId || !inputActions}
                   onClick={() => void runFeature(feature)}
                 >
                   <span className="icpc-workbench__icon">
@@ -229,32 +223,16 @@ function Icon({ name, size = 16 }: { name: FeatureIcon | 'trophy'; size?: number
   }
 
   switch (name) {
-    case 'assistant':
-      return <svg {...common}><rect x="4" y="7" width="16" height="12" rx="3" /><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6" /></svg>
-    case 'overview':
-      return <svg {...common}><path d="M5 20V10M12 20V4M19 20v-7" /></svg>
     case 'today':
       return <svg {...common}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 4V2M20 12h2M12 20v2M4 12H2" /></svg>
     case 'plans':
       return <svg {...common}><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
     case 'reviews':
       return <svg {...common}><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 12a8 8 0 0 1 13.7-5.6L20 8.5" /><path d="M4 20v-4.5h4.5M20 4v4.5h-4.5" /></svg>
-    case 'templates':
-      return <svg {...common}><path d="m9 18-6-6 6-6M15 6l6 6-6 6M14 4l-4 16" /></svg>
     case 'problems':
       return <svg {...common}><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></svg>
     case 'sync':
       return <svg {...common}><path d="M20 7h-5V2M4 17h5v5" /><path d="M18.4 16A7 7 0 0 1 6 18l-2-1M5.6 8A7 7 0 0 1 18 6l2 1" /></svg>
-    case 'import':
-      return <svg {...common}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
-    case 'export':
-      return <svg {...common}><path d="M12 15V3M7 8l5-5 5 5M5 21h14" /></svg>
-    case 'checkins':
-      return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></svg>
-    case 'contests':
-      return <svg {...common}><path d="M5 21V4M5 5h12l-2 4 2 4H5" /></svg>
-    case 'settings':
-      return <svg {...common}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" /></svg>
     case 'trophy':
       return <svg {...common}><path d="M8 4h8v4a4 4 0 0 1-8 0zM10 15h4M12 12v3M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3M8 20h8M9 20v-2h6v2" /></svg>
   }
