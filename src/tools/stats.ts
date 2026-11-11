@@ -39,11 +39,21 @@ export function registerStatsTool(host: IcpcHost, ctx: Context): () => void {
         }
       }
       if (metric === 'weakness') {
+        let level: number | undefined
+        try {
+          const account = host.store.getAccount('codeforces')
+          if (account?.handle) {
+            const rating = await host.adapters.codeforces.fetchCurrentRating?.(account.handle)
+            if (rating != null) level = Math.round(rating / 100) * 100
+          }
+        } catch { /* 拉不到 rating 时统计全部已解决题 */ }
         return {
           ok: true,
           data: computeWeakness(rows, {
             minAttempts: num(args.minAttempts, 5, 1, 1000),
             topN: num(args.topN, 10, 1, 100),
+            minDifficulty: level,
+            allTags: host.store.getAllTags(),
           }),
         }
       }

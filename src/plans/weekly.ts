@@ -75,14 +75,22 @@ function recentAcByTag(store: IcpcStore, sinceDays = 28): Map<string, number> {
 
 export function buildWeeklyPlan(
   store: IcpcStore,
-  opts: { days?: number; startDate?: string } = {},
+  opts: { days?: number; startDate?: string; level?: number } = {},
 ): WeeklyPlanResult {
   const days = Math.min(90, Math.max(7, opts.days ?? 28))
   const startDate = opts.startDate ?? localDay()
   const weekCount = Math.ceil(days / 7)
 
   const rows = store.getSubmissionRows()
-  const weakness = computeWeakness(rows, { minAttempts: 5, topN: 40 })
+  const diffs = store.getRecentAcDifficulties('1970-01-01').sort((a, b) => a - b)
+  const median = diffs.length ? diffs[Math.floor(diffs.length / 2)] : 1200
+  const level = opts.level ?? Math.round(median / 100) * 100
+  const weakness = computeWeakness(rows, {
+    minAttempts: 5,
+    topN: 40,
+    minDifficulty: level,
+    allTags: store.getAllTags(),
+  })
   const recent = recentAcByTag(store)
 
   // 候选方向：gap 大 → 优先级高；最近 28 天练得多的往后排
@@ -112,9 +120,6 @@ export function buildWeeklyPlan(
     picked.push({ tag: FALLBACK[k % FALLBACK.length], gap: 0, attempts: 0 })
   }
 
-  const diffs = store.getRecentAcDifficulties('1970-01-01').sort((a, b) => a - b)
-  const median = diffs.length ? diffs[Math.floor(diffs.length / 2)] : 1200
-  const level = Math.round(median / 100) * 100
   const low = Math.max(800, level - 100)
   const high = level + 300
 

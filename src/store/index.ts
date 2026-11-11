@@ -16,6 +16,7 @@ import type {
 import { defaultState } from './schema.ts'
 // 难度分桶统一由 analysis/stats 提供，避免重复定义
 import { bucketForDifficulty } from '../analysis/stats.ts'
+import { filterNoiseTags } from '../analysis/tags.ts'
 
 export { bucketForDifficulty }
 
@@ -461,6 +462,15 @@ export class IcpcStore {
           p.difficulty != null &&
           !acKeys.has(`${p.platform}:${p.problemKey}`),
       )
+  }
+
+  /** 题库里出现过的所有算法标签（过滤噪声标签） */
+  getAllTags(): string[] {
+    const tags = new Set<string>()
+    for (const p of this.state.problems) {
+      for (const tag of filterNoiseTags(p.tags ?? [])) tags.add(tag)
+    }
+    return [...tags].sort()
   }
 
   // ---------- Plans ----------

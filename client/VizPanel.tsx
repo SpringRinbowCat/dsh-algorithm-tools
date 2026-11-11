@@ -41,6 +41,7 @@ export interface Stats {
   totals: { attempts: number; ac: number; acRate: number; solvedProblems: number; touched: number }
   byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
+  byTag: Array<{ tag: string; solved: number; weight: number; gap: number }>
   weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number; solved: number }>
 }
 
@@ -316,28 +317,27 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
 
 function StatsView({ data }: { data: Stats }): ReactNode {
   const t = data.totals
-  type DiffItem = Stats['byDifficulty'][number]
   const solvedItems = data.byDifficulty.filter((d) => d.solved > 0)
-  const scoreItems = data.byDifficulty.filter((d) => d.score > 0)
+  const tagItems = data.byTag
   const palette = ['#4ade80', '#60a5fa', '#f59e0b', '#f87171', '#a78bfa', '#f472b6', '#22d3ee', '#facc15']
   const R = 38
   const C = 2 * Math.PI * R
 
-  const makeChart = (list: DiffItem[], valueOf: (d: DiffItem) => number) => {
+  const makeChart = <T,>(list: T[], valueOf: (d: T) => number, keyOf: (d: T) => string) => {
     const total = list.reduce((sum, d) => sum + valueOf(d), 0)
     let offset = 0
     const segs = list.map((d, i) => {
       const value = valueOf(d)
       const pct = total > 0 ? (value / total) * 100 : 0
-      const seg = { ...d, value, pct, color: palette[i % palette.length], offset }
+      const seg = { ...d, key: keyOf(d), value, pct, color: palette[i % palette.length], offset }
       offset += (pct / 100) * C
       return seg
     })
     return { total, segs }
   }
 
-  const solvedChart = makeChart(solvedItems, (d) => d.solved)
-  const scoreChart = makeChart(scoreItems, (d) => d.score)
+  const solvedChart = makeChart(solvedItems, (d) => d.solved, (d) => d.bucket)
+  const tagChart = makeChart(tagItems, (d) => d.solved, (d) => d.tag)
 
   return (
     <>
@@ -378,13 +378,13 @@ function StatsView({ data }: { data: Stats }): ReactNode {
         </div>
       </div>
 
-      <div className="icpc-viz__section">已解决题目分数分布</div>
+      <div className="icpc-viz__section">题目标签分布（按已解决数）</div>
       <div className="icpc-viz__donutwrap">
-        <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="已解决题目分数分布扇形图">
+        <svg className="icpc-viz__donut" viewBox="0 0 100 100" role="img" aria-label="题目标签分布扇形图">
           <circle cx="50" cy="50" r={R} fill="none" stroke="var(--dsw-alias-interactive-bg-hover)" strokeWidth="13" />
-          {scoreChart.segs.map((s) => (
+          {tagChart.segs.map((s) => (
             <circle
-              key={s.bucket}
+              key={s.key}
               cx="50"
               cy="50"
               r={R}
@@ -396,16 +396,20 @@ function StatsView({ data }: { data: Stats }): ReactNode {
               transform="rotate(-90 50 50)"
             />
           ))}
-          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{scoreChart.total}</text>
-          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">分</text>
+          <text x="50" y="49" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{tagChart.total}</text>
+          <text x="50" y="61" textAnchor="middle" fontSize="7" fill="currentColor" opacity="0.6">标签计数</text>
         </svg>
         <div className="icpc-viz__lglist">
-          {scoreChart.segs.map((s) => (
-            <div className="icpc-viz__lg" key={s.bucket} title={`已解决题目分数 ${s.score}`}>
+          {tagChart.segs.map((s) => (
+            <div
+              className="icpc-viz__lg"
+              key={s.key}
+              title={`已解决 ${s.solved} 题 · 权重 ${(s.weight * 100).toFixed(1)}% · gap ${s.gap.toFixed(1)}`}
+            >
               <i style={{ background: s.color }} />
-              <span className="icpc-viz__lgname">{s.bucket}</span>
+              <span className="icpc-viz__lgname">{s.tag}</span>
               <span className="icpc-viz__lgval">{Math.round(s.pct)}%</span>
-              <span className="icpc-viz__lgac">{s.score} 分</span>
+              <span className="icpc-viz__lgac">{s.solved} 题</span>
             </div>
           ))}
         </div>

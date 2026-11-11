@@ -195,7 +195,12 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
 
       // ---------- 弱项标签：历史 50% + 比赛复盘 50% ----------
       const rows = store.getSubmissionRows()
-      const weakness = computeWeakness(rows, { minAttempts: 5, topN: 15 })
+      const weakness = computeWeakness(rows, {
+        minAttempts: 5,
+        topN: 15,
+        minDifficulty: level,
+        allTags: store.getAllTags(),
+      })
       const weakItems = weakness.items.filter((i) => i.gap > 0)
       const weakTags = weakItems.map((i) => i.tag)
 

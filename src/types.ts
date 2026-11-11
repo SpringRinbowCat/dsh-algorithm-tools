@@ -29,6 +29,7 @@ export interface WeaknessItem {
   avgAcRate: number
   gap: number
   solved: number
+  weight: number
 }
 
 export interface DifficultyWeakness {

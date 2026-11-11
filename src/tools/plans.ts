@@ -64,7 +64,16 @@ export function registerPlanTools(host: IcpcHost, ctx: Context): () => void {
         }
       }
       try {
-        const built = buildWeeklyPlan(host.store, { days, startDate })
+        let planLevel: number | undefined
+        try {
+          const account = host.store.getAccount('codeforces')
+          if (account?.handle) {
+            const rating = await host.adapters.codeforces.fetchCurrentRating?.(account.handle)
+            if (rating != null) planLevel = Math.round(rating / 100) * 100
+          }
+        } catch { /* 拉不到 rating 时用历史 AC 中位数 */ }
+
+        const built = buildWeeklyPlan(host.store, { days, startDate, level: planLevel })
         const plan = host.store.createPlan({
           ...built.plan,
           // PlanInput 用 date，PlanRecord 用 taskDate，这里做一次边界转换

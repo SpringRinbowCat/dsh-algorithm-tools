@@ -81,11 +81,35 @@ describe('computeWeakness', () => {
     const graphItem = profile.items.find((i) => i.tag === 'graph')
     assert.ok(graphItem)
     assert.ok(graphItem!.gap > 0)
-    assert.equal(graphItem!.gap, 2.5)
+    assert.equal(graphItem!.gap, 50)
     const dpItem = profile.items.find((i) => i.tag === 'dp')
     assert.ok(dpItem)
     assert.ok(dpItem!.gap <= 0)
-    assert.equal(dpItem!.gap, -2.5)
+    assert.equal(dpItem!.gap, -50)
+  })
+
+  it('uses current difficulty threshold and includes unseen tags', () => {
+    const rows = [
+      row('codeforces', 'AC', '2026-01-01T00:00:00Z', '1A', 1200, ['dp']),
+      row('codeforces', 'AC', '2026-01-01T00:00:00Z', '2A', 1400, ['dp']),
+      row('codeforces', 'AC', '2026-01-01T00:00:00Z', '3A', 1400, ['graph']),
+      row('codeforces', 'AC', '2026-01-01T00:00:00Z', '4A', 1000, ['trees']),
+    ]
+    const profile = computeWeakness(rows, {
+      minAttempts: 1,
+      topN: 10,
+      minDifficulty: 1300,
+      allTags: ['dp', 'graph', 'trees'],
+      includeUnseenTags: true,
+    })
+    const dp = profile.items.find((i) => i.tag === 'dp')
+    const graph = profile.items.find((i) => i.tag === 'graph')
+    const trees = profile.items.find((i) => i.tag === 'trees')
+    assert.equal(profile.items.length, 3)
+    assert.equal(dp!.solved, 1)
+    assert.equal(graph!.solved, 1)
+    assert.equal(trees!.solved, 0)
+    assert.ok(trees!.gap > 0)
   })
 })
 

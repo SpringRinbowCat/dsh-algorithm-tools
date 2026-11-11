@@ -99,7 +99,12 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
   ctx.effect(() => () => { void store.flush() })
 
   registerActivationRoute(ctx, host)
-  registerOverviewRoute(ctx, store)
+  registerOverviewRoute(ctx, store, async () => {
+    const account = store.getAccount('codeforces')
+    if (!account?.handle) return null
+    const rating = await adapters.codeforces.fetchCurrentRating?.(account.handle) ?? null
+    return rating == null ? null : Math.round(rating / 100) * 100
+  })
   registerSyncRoute(ctx, host)
   registerContestsRoute(ctx, host)
   registerPlanRoute(ctx, store)

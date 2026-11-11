@@ -1,4 +1,4 @@
-/** 弱项画像（移植自原 icpc-workbench，纯函数） */
+/** 弱项画像（按当前分数以上的已解决题目分布计算） */
 
 import type { WeaknessProfile, WeaknessItem, DifficultyWeakness } from '../types.ts'
 import type { SubmissionRow } from '../store/index.ts'
@@ -8,6 +8,12 @@ import { filterNoiseTags } from './tags.ts'
 export interface WeaknessOptions {
   minAttempts?: number
   topN?: number
+  /** 只统计 difficulty >= 该值的已解决题目；不传则统计全部 */
+  minDifficulty?: number
+  /** 全部算法标签；用于把从未出现的标签也纳入平均权重 */
+  allTags?: string[]
+  /** 是否输出从未出现的标签（默认 false） */
+  includeUnseenTags?: boolean
 }
 
 interface MutableStat {
@@ -25,40 +31,55 @@ function bump(map: Map<string, MutableStat>, key: string, isAc: boolean): void {
 export function computeWeakness(rows: SubmissionRow[], opts: WeaknessOptions = {}): WeaknessProfile {
   const minAttempts = opts.minAttempts ?? 5
   const topN = opts.topN ?? 10
+  const minDifficulty = opts.minDifficulty
   const totalAc = rows.filter((r) => r.verdict === 'AC').length
   const avgAcRate = rate(rows.length, totalAc)
 
   const tagMap = new Map<string, MutableStat>()
+  for (const tag of opts.allTags ?? []) tagMap.set(tag, { attempts: 0, ac: 0 })
   const solvedByTag = new Map<string, Set<string>>()
+  const highLevelSolved = new Set<string>()
+
   for (const r of rows) {
     const isAc = r.verdict === 'AC'
+    const key = `${r.platform}:${r.problemKey}`
+    const highLevel = isAc && (minDifficulty == null || (r.difficulty != null && r.difficulty >= minDifficulty))
+    if (highLevel) highLevelSolved.add(key)
+
     for (const tag of filterNoiseTags(r.tags)) {
       bump(tagMap, tag, isAc)
-      if (isAc) {
+      if (highLevel) {
         if (!solvedByTag.has(tag)) solvedByTag.set(tag, new Set())
-        solvedByTag.get(tag)!.add(`${r.platform}:${r.problemKey}`)
+        solvedByTag.get(tag)!.add(key)
       }
     }
   }
 
-  const avgSolved = tagMap.size
-    ? [...tagMap.keys()].reduce((sum, tag) => sum + (solvedByTag.get(tag)?.size ?? 0), 0) / tagMap.size
+  const allTagNames = [...new Set([...(opts.allTags ?? []), ...tagMap.keys()])]
+  const totalHigh = highLevelSolved.size
+  const tagWeights = new Map<string, number>()
+  for (const tag of allTagNames) {
+    tagWeights.set(tag, totalHigh > 0 ? (solvedByTag.get(tag)?.size ?? 0) / totalHigh : 0)
+  }
+  const avgWeight = allTagNames.length > 0
+    ? [...tagWeights.values()].reduce((sum, weight) => sum + weight, 0) / allTagNames.length
     : 0
 
   const items: WeaknessItem[] = [...tagMap.entries()]
     .map(([tag, s]) => {
-      const solved = solvedByTag.get(tag)?.size ?? 0
+      const weight = tagWeights.get(tag) ?? 0
       return {
         tag,
         attempts: s.attempts,
         ac: s.ac,
         acRate: rate(s.attempts, s.ac),
         avgAcRate,
-        gap: round2(avgSolved - solved),
-        solved,
+        gap: round2((avgWeight - weight) * 100),
+        solved: solvedByTag.get(tag)?.size ?? 0,
+        weight,
       }
     })
-    .filter((i) => i.attempts >= minAttempts)
+    .filter((i) => opts.includeUnseenTags || i.attempts >= minAttempts)
     .sort((a, b) => b.gap - a.gap)
     .slice(0, topN)
 

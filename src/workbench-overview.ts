@@ -205,14 +205,22 @@ export interface StatsSnapshot {
   totals: { attempts: number; ac: number; acRate: number; solvedProblems: number; touched: number }
   byDifficulty: Array<{ bucket: string; attempts: number; ac: number; acRate: number; solved: number; score: number }>
   platforms: Array<{ platform: string; attempts: number; ac: number; acRate: number; solved: number }>
+  byTag: Array<{ tag: string; solved: number; weight: number; gap: number }>
   weakTags: Array<{ tag: string; attempts: number; acRate: number; gap: number; solved: number }>
 }
 
 /** 数据概览（客户端右侧视图用的快照，和 icpc_stats 同源） */
-export function buildStats(store: IcpcStore): StatsSnapshot {
+export function buildStats(store: IcpcStore, level?: number | null): StatsSnapshot {
   const rows = store.getSubmissionRows()
   const overall = computeOverall(rows)
-  const weakness = computeWeakness(rows, { minAttempts: 5, topN: 6 })
+  const allTags = store.getAllTags()
+  const weakness = computeWeakness(rows, {
+    minAttempts: 5,
+    topN: allTags.length + 10,
+    minDifficulty: level ?? undefined,
+    allTags,
+    includeUnseenTags: true,
+  })
   return {
     totals: {
       attempts: overall.attempts,
@@ -222,9 +230,18 @@ export function buildStats(store: IcpcStore): StatsSnapshot {
       touched: new Set(rows.map((r) => `${r.platform}:${r.problemKey}`)).size,
     },
     byDifficulty: overall.byDifficulty,
+    byTag: weakness.items
+      .slice()
+      .sort((a, b) => b.solved - a.solved || a.tag.localeCompare(b.tag))
+      .map((i) => ({
+        tag: i.tag,
+        solved: i.solved,
+        weight: i.weight,
+        gap: i.gap,
+      })),
     platforms: overall.byPlatform,
     weakTags: weakness.items
-      .filter((i) => i.gap > 0)
+      .filter((i) => i.gap > 0 && i.attempts >= 5)
       .slice(0, 6)
       .map((i) => ({ tag: i.tag, attempts: i.attempts, acRate: i.acRate, gap: i.gap, solved: i.solved })),
   }
@@ -243,13 +260,13 @@ function trustedOrigin(req: IncomingMessage): boolean {
   return origin === `http://${host}` || origin === `https://${host}`
 }
 
-export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown) => () => void }; effect: (fn: () => void | (() => void)) => unknown }, store: IcpcStore): void {
+export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown) => () => void }; effect: (fn: () => void | (() => void)) => unknown }, store: IcpcStore, getLevel?: () => Promise<number | null>): void {
   if (!ctx.webServer) return
   ctx.effect(() => {
     const off = ctx.webServer!.register({
       kind: 'exact',
       path: '/icpc-workbench/overview',
-      handler(req: IncomingMessage, res: ServerResponse) {
+      handler: async (req: IncomingMessage, res: ServerResponse) => {
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')
           sendJson(res, 405, { ok: false, error: 'method-not-allowed' })
@@ -278,7 +295,7 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
     const offStats = ctx.webServer!.register({
       kind: 'exact',
       path: '/icpc-workbench/stats',
-      handler(req: IncomingMessage, res: ServerResponse) {
+      handler: async (req: IncomingMessage, res: ServerResponse) => {
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')
           sendJson(res, 405, { ok: false, error: 'method-not-allowed' })
@@ -289,7 +306,8 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
           return
         }
         try {
-          sendJson(res, 200, { ok: true, stats: buildStats(store) })
+          const level = getLevel ? await getLevel().catch(() => null) : null
+          sendJson(res, 200, { ok: true, stats: buildStats(store, level) })
         } catch (e) {
           sendJson(res, 500, { ok: false, error: (e as Error).message })
         }
