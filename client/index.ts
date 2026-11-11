@@ -129,6 +129,7 @@ function BetterSidebarWorkbenchTab(props: {
 function SettingsPanel(): unknown {
   const tools = [
     ['icpc_sync', '同步 CF/AtCoder 刷题记录'],
+    ['icpc_sync_all', '同步提交并提交本地代码'],
     ['icpc_stats', '统计 / 弱项画像 / 趋势'],
     ['icpc_today', '今日三档训练推荐'],
     ['icpc_generate_plan', '生成训练计划'],

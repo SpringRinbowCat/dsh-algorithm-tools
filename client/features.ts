@@ -59,7 +59,7 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     label: '同步数据',
     description: '同步提交记录并推送本地代码',
     icon: 'sync',
-    prompt: '同步数据：严格按仓库根目录 docs/sync.md 执行。',
+    prompt: 'icpc_sync_all',
   },
   {
     id: 'bank',

@@ -176,6 +176,7 @@ AI 配置也可运行时通过 `icpc_settings` 工具修改（持久化到 JSON�
 | 工具 | 功能 |
 |------|------|
 | `icpc_sync` | 同步 CF/AtCoder 提交记录（增量，支持 all 批量） |
+| `icpc_sync_all` | 同步 CF 提交并提交/推送本地训练仓库；`rank/_pending` 先返回题号等比赛号 |
 | `icpc_stats` | 统计分析：overall / weakness / trend |
 | `icpc_today` | 今日三档训练推荐（巩固/同段/挑战；能力值取当前 rating；当天目录已有题就锁定；自动写 `<日期>.md`） |
 | `icpc_generate_plan` | AI 生成训练计划（无 key 降级模板） |

@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { AgentLike, Context } from './dsh-compat.ts'
 import type { IcpcHost } from './index.ts'
 import { registerSyncTool } from './tools/sync.ts'
+import { registerSyncAllTool } from './tools/sync-all.ts'
 import { registerStatsTool } from './tools/stats.ts'
 import { registerTodayTool } from './tools/today.ts'
 import { registerPlanTools } from './tools/plans.ts'
@@ -13,6 +14,7 @@ import { registerProblemTool } from './tools/problems.ts'
 
 export const ICPC_TOOL_NAMES = [
   'icpc_sync',
+  'icpc_sync_all',
   'icpc_stats',
   'icpc_today',
   'icpc_generate_plan',
@@ -27,6 +29,7 @@ export const ICPC_TOOL_NAMES = [
 export function registerIcpcTools(host: IcpcHost, targetCtx: Context): () => void {
   const disposers = [
     registerSyncTool(host, targetCtx),
+    registerSyncAllTool(host, targetCtx),
     registerStatsTool(host, targetCtx),
     registerTodayTool(host, targetCtx),
     registerPlanTools(host, targetCtx),
