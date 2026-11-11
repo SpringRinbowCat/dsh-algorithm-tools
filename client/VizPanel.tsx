@@ -409,7 +409,7 @@ function StatsView({ data }: { data: Stats }): ReactNode {
           ))}
           {tagChart.segs.length > 6 && (
             <button type="button" className="icpc-viz__more" onClick={() => setShowAllTags((v) => !v)}>
-              {showAllTags ? '收起' : `展开全部（${tagChart.segs.length}）`}
+              {showAllTags ? '收起' : '展开全部'}
             </button>
           )}
         </div>
@@ -464,7 +464,7 @@ const CSS = `
 .icpc-viz__lgname { color: var(--dsw-alias-label-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .icpc-viz__lgval { color: var(--dsw-alias-label-primary); }
 .icpc-viz__lgac { color: var(--dsw-alias-label-caption); }
-.icpc-viz__more { margin-top: 4px; padding: 2px 0; border: 0; background: transparent; color: var(--dsw-alias-label-secondary); font-size: 10px; text-align: left; cursor: pointer; }
+.icpc-viz__more { align-self: flex-start; width: fit-content; margin-top: 4px; padding: 2px 0; border: 0; background: transparent; color: var(--dsw-alias-label-secondary); font-size: 10px; text-align: left; cursor: pointer; }
 .icpc-viz__muted { font-size: 11px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__contests { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .icpc-viz__contests li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11px; }
