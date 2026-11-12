@@ -85,3 +85,21 @@ describe('按当前账号过滤提交', () => {
     assert.equal(store.getAcKeys().size, 2)
   })
 })
+
+describe('换号时给旧记录打标（跨设备一致性）', () => {
+  it('换号后旧账号的无 handle 提交会被归到旧账号，不再计入统计', async () => {
+    // 模拟另一台设备：本地有旧账号提交，且都没有 handle 字段
+    const store = await makeStore('OldHandle', [
+      sub('100A', 'AC', undefined, 'e1'),
+      sub('100B', 'AC', undefined, 'e2'),
+    ])
+    // 迁移会把它们补成当前账号 OldHandle
+    assert.equal(store.getAcKeys().size, 2)
+
+    store.setAccount('codeforces', 'NewHandle')
+
+    // 换号后这两条属于 OldHandle，被过滤掉
+    assert.equal(store.getAcKeys().size, 0)
+    assert.equal(store.getSubmissionRows().length, 0)
+  })
+})

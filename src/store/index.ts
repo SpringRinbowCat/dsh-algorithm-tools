@@ -190,6 +190,13 @@ export class IcpcStore {
 
   setAccount(platform: PlatformId, handle: string): void {
     const existing = this.state.settings.accounts[platform]
+    // 换号时先把没有 handle 的旧记录归到旧账号名下，
+    // 否则它们会在下次加载时被历史迁移逻辑认成新账号的数据。
+    if (existing?.handle && existing.handle !== handle) {
+      for (const sub of this.state.submissions) {
+        if (sub.platform === platform && !sub.handle) sub.handle = existing.handle
+      }
+    }
     this.state.settings.accounts[platform] = {
       platform, handle,
       // 换 handle 时重置 lastSyncAt（下次同步全量重拉）
