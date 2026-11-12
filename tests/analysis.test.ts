@@ -6,7 +6,6 @@ import { computeWeakness } from '../src/analysis/weakness.ts'
 import { getWeekKey, computeTrend } from '../src/analysis/trend.ts'
 import { filterNoiseTags, isNoiseTag } from '../src/analysis/tags.ts'
 import { estimateLevel, bandRanges, pickBand, type CandidateProblem } from '../src/analysis/today.ts'
-import { parsePlanJson } from '../src/plans/planService.ts'
 
 function row(platform: string, verdict: string, submittedAt: string, problemKey: string, difficulty: number | null, tags: string[] = []): SubmissionRow {
   return { platform: platform as never, verdict, submittedAt, problemKey, difficulty, tags }
@@ -185,49 +184,5 @@ describe('pickBand', () => {
     const result = pickBand(candidates, bands.consolidation, 1, ['dp'], new Set(), 0, [], new Map([['dp', 1]]))
     assert.equal(result.problems[0].id, 2) // weak-tagged one first
     assert.deepEqual(result.problems[0].weakTags, ['dp'])
-  })
-})
-
-describe('parsePlanJson', () => {
-  it('parses valid JSON', () => {
-    const raw = JSON.stringify({
-      title: 'Test Plan',
-      goal: 'Practice',
-      tasks: [
-        { date: '2026-01-01', title: 'Task 1', kind: 'practice' },
-        { date: '2026-01-02', title: 'Task 2', kind: 'review' },
-      ],
-    })
-    const plan = parsePlanJson(raw, '2026-01-01', 2)
-    assert.equal(plan.title, 'Test Plan')
-    assert.equal(plan.tasks.length, 2)
-  })
-
-  it('tolerates code fences and trailing text', () => {
-    const raw = 'Here is your plan:\n```json\n{"title":"P","goal":"","tasks":[{"date":"2026-01-01","title":"T"}]}\n```\nGood luck!'
-    const plan = parsePlanJson(raw, '2026-01-01', 1)
-    assert.equal(plan.title, 'P')
-  })
-
-  it('tolerates trailing commas', () => {
-    const raw = '{"title":"P","goal":"","tasks":[{"date":"2026-01-01","title":"T",},]}'
-    const plan = parsePlanJson(raw, '2026-01-01', 1)
-    assert.equal(plan.tasks.length, 1)
-  })
-
-  it('filters out-of-range dates', () => {
-    const raw = JSON.stringify({
-      title: 'P',
-      tasks: [
-        { date: '2026-01-01', title: 'In' },
-        { date: '2026-02-01', title: 'Out' },
-      ],
-    })
-    const plan = parsePlanJson(raw, '2026-01-01', 3)
-    assert.equal(plan.tasks.length, 1)
-  })
-
-  it('throws on missing title', () => {
-    assert.throws(() => parsePlanJson('{"tasks":[]}', '2026-01-01', 1), /title/)
   })
 })

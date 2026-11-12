@@ -13,8 +13,6 @@ export interface DayCell {
   date: string
   ac: number
   submissions: number
-  tasks: number
-  checked: number
   trainingTotal: number
   trainingDone: number
   done: boolean
@@ -25,19 +23,12 @@ export interface TodayStatus {
   /** 今日 AC 总数（所有题，不限于训练题） */
   ac: number
   submissions: number
-  tasks: { total: number; checked: number }
   training: {
     total: number
     completed: number
     started: boolean
     done: boolean
     /** 还没 AC 的今日训练题（带可跳转链接），供面板渲染成超链接 */
-    remaining: Array<{ problemKey: string; url: string | null }>
-  }
-  /** 计划里今天的任务题（单独计数，面板显示成「训练 0/6 + 计划 0/2」） */
-  planTasks: {
-    total: number
-    completed: number
     remaining: Array<{ problemKey: string; url: string | null }>
   }
   done: boolean
@@ -69,16 +60,12 @@ export function buildDayCells(store: IcpcStore, days: number, todayStr: string):
     const date = addDaysLocal(since, i)
     const activity = map.get(date)
     const acSet = activity?.ac ?? new Set<string>()
-    const tasks = store.getTasksByDate(date)
-    const checked = tasks.filter((t) => t.checked).length
     const index = store.getTrainingIndex(date)
     const trainingDone = index.filter((k) => acSet.has(k)).length
     cells.push({
       date,
       ac: acSet.size,
       submissions: activity?.submissions ?? 0,
-      tasks: tasks.length,
-      checked,
       trainingTotal: index.length,
       trainingDone,
       // 有训练索引 → 以索引里的题全部 AC 为准；没有索引（历史数据）→ 回退为「当天有 AC」
@@ -90,8 +77,6 @@ export function buildDayCells(store: IcpcStore, days: number, todayStr: string):
 
 export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatus {
   const cell = buildDayCells(store, 1, todayStr)[0]
-  const tasks = store.getTasksByDate(todayStr)
-  const pending = tasks.filter((t) => !t.checked)
 
   const acKeys = store.getAcKeys()
   const index = store.getTrainingIndex(todayStr)
@@ -103,18 +88,6 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     done: index.length > 0 && completed.length === index.length,
   }
 
-  // 计划里今天带题号的任务（v4.1 起计划任务具体到题），单独计数
-  const planTaskList = tasks.filter((t) => t.problemKey && t.platform)
-  const planRemaining = planTaskList
-    .filter((t) => !acKeys.has(`${t.platform}:${t.problemKey}`))
-    .map((t) => ({ problemKey: t.problemKey as string, url: t.url ?? null }))
-  const planTasks = {
-    total: planTaskList.length,
-    completed: planTaskList.length - planRemaining.length,
-    remaining: planRemaining,
-  }
-  const planDone = planTaskList.length === 0 || planRemaining.length === 0
-
   const unresolved: string[] = []
   const seen = new Set<string>()
   for (const s of store.getSubmissionRows()) {
@@ -125,7 +98,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     if (!acKeys.has(key)) unresolved.push(s.problemKey)
   }
 
-  if (!training.done || !planDone) {
+  if (!training.done) {
     const left = index
       .filter((k) => !acKeys.has(k))
       .map((k) => {
@@ -139,21 +112,18 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     } else if (!training.done) {
       items.push(`今日训练还剩 ${left.length} 题`)
     }
-    if (!planDone) items.push(`今日周训练计划还剩 ${planRemaining.length} 题`)
     if (unresolved.length > 0 && !training.done) items.push(`今天试过但没 AC：${unresolved.slice(0, 3).join('、')}`)
     return {
       date: todayStr,
       ac: cell.ac,
       submissions: cell.submissions,
-      tasks: { total: tasks.length, checked: tasks.length - pending.length },
       training: { ...training, remaining: left },
-      planTasks,
       done: false,
       advice: {
         kind: 'catchup',
-        title: index.length === 0 && planTasks.total === 0
+        title: index.length === 0
           ? '今日未开始'
-          : `今日训练 ${completed.length}/${index.length} + 计划 ${planTasks.completed}/${planTasks.total}`,
+          : `今日训练 ${completed.length}/${index.length}`,
         items,
       },
     }
@@ -163,9 +133,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     date: todayStr,
     ac: cell.ac,
     submissions: cell.submissions,
-    tasks: { total: tasks.length, checked: tasks.length },
     training: { ...training, remaining: [] },
-    planTasks: { ...planTasks, remaining: [] },
     done: true,
     advice: {
       kind: 'extra',

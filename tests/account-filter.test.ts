@@ -29,7 +29,6 @@ async function makeStore(handle: string | undefined, submissions: unknown[] = []
       { platform: 'codeforces', problemKey: '100B', title: 'B', difficulty: 1400, url: null, tags: [] },
     ],
     submissions,
-    plans: [],
     reviews: [],
     templateProgress: [],
     customTemplates: [],

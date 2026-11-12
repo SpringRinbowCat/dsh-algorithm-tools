@@ -8,8 +8,6 @@ import type { PlatformId } from '../types.ts'
 import type {
   ProblemRecord,
   SubmissionRecord,
-  PlanRecord,
-  PlanTaskRecord,
   SettingsRecord,
   StoreState,
 } from './schema.ts'
@@ -43,8 +41,6 @@ export class IcpcStore {
   private fs: FsService
   private dataDir: string
   private saveTimer: ReturnType<typeof setTimeout> | null = null
-  private nextPlanId = 1
-  private nextTaskId = 1
   /** 提交索引：`${platform}:${problemKey}` → SubmissionRecord[]，避免 O(n×m) 全量扫描 */
   private subIndex: Map<string, SubmissionRecord[]> = new Map()
   /** 排序后的提交缓存（按时间降序），插入时追加、读取时直接用 */
@@ -115,12 +111,6 @@ export class IcpcStore {
         if (this.fs.rename) await this.fs.rename(`${this.dataDir}/${STATE_FILE}`, bad)
         console.warn(`[icpc-store] corrupted state backed up to ${bad}`)
       } catch { /* 备份失败就算了，至少别崩 */ }
-    }
-    for (const p of this.state.plans) {
-      if (p.id >= this.nextPlanId) this.nextPlanId = p.id + 1
-      for (const t of p.tasks) {
-        if (t.id >= this.nextTaskId) this.nextTaskId = t.id + 1
-      }
     }
     this.rebuildSubIndex()
   }
@@ -519,185 +509,6 @@ export class IcpcStore {
       for (const tag of filterNoiseTags(p.tags ?? [])) tags.add(tag)
     }
     return [...tags].sort()
-  }
-
-  // ---------- Plans ----------
-
-  createPlan(plan: Omit<PlanRecord, 'id' | 'createdAt'>): PlanRecord {
-    const record: PlanRecord = {
-      ...plan,
-      id: this.nextPlanId++,
-      createdAt: new Date().toISOString(),
-    }
-    for (const t of record.tasks) {
-      t.id = this.nextTaskId++
-    }
-    this.state.plans.push(record)
-    this.scheduleSave()
-    return record
-  }
-
-  listPlans(): PlanRecord[] {
-    return [...this.state.plans].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }
-
-  /** 按起始日期找计划（taskList 文件同步用） */
-  findPlanByStartDate(startDate: string): PlanRecord | undefined {
-    return this.state.plans.find((p) => p.startDate === startDate)
-  }
-
-  /** 用文件里的任务整体替换本地计划任务（保留 plan id） */
-  replacePlanTasks(planId: number, tasks: Array<Omit<PlanTaskRecord, 'id'>>): boolean {
-    const plan = this.getPlan(planId)
-    if (!plan) return false
-    plan.tasks = tasks.map((t) => ({ ...t, id: this.nextTaskId++ }))
-    this.scheduleSave()
-    return true
-  }
-
-  getPlan(id: number): PlanRecord | undefined {
-    return this.state.plans.find((p) => p.id === id)
-  }
-
-  /** 覆盖指定日期的计划（v4.1 每周方向用） */
-  getActivePlan(date: string): PlanRecord | undefined {
-    return this.state.plans.find((p) => p.startDate <= date && p.endDate >= date)
-  }
-
-  /** 当前周方向：第几周、方向文案、该周聚焦标签；没有计划或旧计划（无 weeks）返回 null */
-  currentFocus(date: string): { planId: number; week: number; direction: string; tags: string[] } | null {
-    const plan = this.getActivePlan(date)
-    if (!plan?.weeks?.length) return null
-    const start = new Date(`${plan.startDate}T00:00:00Z`).getTime()
-    const day = new Date(`${date}T00:00:00Z`).getTime()
-    const idx = Math.max(0, Math.floor((day - start) / 86_400_000 / 7))
-    const w = plan.weeks.find((x) => x.index === idx + 1) ?? plan.weeks[plan.weeks.length - 1]
-    return w ? { planId: plan.id, week: w.index, direction: w.direction, tags: w.tags } : null
-  }
-
-  /** 今日训练完成后，把当天的计划任务自动勾掉；返回勾选数量 */
-  autoCheckPlanTasks(date: string): number {
-    let n = 0
-    for (const plan of this.state.plans) {
-      for (const t of plan.tasks) {
-        if (t.taskDate !== date || t.checked) continue
-        t.checked = true
-        n++
-      }
-    }
-    if (n > 0) this.scheduleSave()
-    return n
-  }
-
-  deletePlan(id: number): boolean {
-    const idx = this.state.plans.findIndex((p) => p.id === id)
-    if (idx < 0) return false
-    this.state.plans.splice(idx, 1)
-    this.scheduleSave()
-    return true
-  }
-
-  findTask(taskId: number): { plan: PlanRecord; task: PlanTaskRecord } | undefined {
-    for (const plan of this.state.plans) {
-      const task = plan.tasks.find((t) => t.id === taskId)
-      if (task) return { plan, task }
-    }
-    return undefined
-  }
-
-  updateTask(taskId: number, patch: Partial<PlanTaskRecord>): boolean {
-    const found = this.findTask(taskId)
-    if (!found) return false
-    Object.assign(found.task, patch)
-    this.scheduleSave()
-    return true
-  }
-
-  deleteTask(taskId: number): boolean {
-    for (const plan of this.state.plans) {
-      const idx = plan.tasks.findIndex((t) => t.id === taskId)
-      if (idx >= 0) {
-        plan.tasks.splice(idx, 1)
-        this.scheduleSave()
-        return true
-      }
-    }
-    return false
-  }
-
-  toggleCheckin(taskId: number, checked: boolean): void {
-    const found = this.findTask(taskId)
-    if (!found) return
-    found.task.checked = checked
-    this.scheduleSave()
-  }
-
-  getTasksByDate(date: string): PlanTaskRecord[] {
-    const tasks: PlanTaskRecord[] = []
-    for (const plan of this.state.plans) {
-      for (const t of plan.tasks) {
-        if (t.taskDate === date) tasks.push(t)
-      }
-    }
-    return tasks
-  }
-
-  /** 记录某天「今日训练」抽到的题（platform:problemKey），用于判定当天训练是否完成 */
-  setTrainingIndex(date: string, keys: string[]): void {
-    this.state.trainingIndex[date] = [...new Set(keys)]
-    this.scheduleSave()
-  }
-
-  getTrainingIndex(date: string): string[] {
-    return this.state.trainingIndex[date] ?? []
-  }
-
-  setBankSyncedAt(iso: string): void {
-    this.state.bankSyncedAt = iso
-    this.scheduleSave()
-  }
-
-  getBankSyncedAt(): string | null {
-    return this.state.bankSyncedAt ?? null
-  }
-
-  getMonthView(month: string): Array<{ date: string; total: number; checked: number }> {
-    const byDate = new Map<string, { total: number; checked: number }>()
-    for (const plan of this.state.plans) {
-      for (const t of plan.tasks) {
-        if (t.taskDate.startsWith(month)) {
-          const cur = byDate.get(t.taskDate) ?? { total: 0, checked: 0 }
-          cur.total++
-          if (t.checked) cur.checked++
-          byDate.set(t.taskDate, cur)
-        }
-      }
-    }
-    return [...byDate.entries()].map(([date, v]) => ({ date, ...v })).sort((a, b) => a.date.localeCompare(b.date))
-  }
-
-  getStreak(todayStr: string): { current: number; longest: number; totalDays: number } {
-    const dates = new Set<string>()
-    for (const plan of this.state.plans) {
-      for (const t of plan.tasks) {
-        if (t.checked) dates.add(t.taskDate)
-      }
-    }
-    if (dates.size === 0) return { current: 0, longest: 0, totalDays: 0 }
-    const toDayNum = (s: string): number => Number(new Date(`${s}T00:00:00Z`).getTime() / 86_400_000) | 0
-    const days = [...dates].map(toDayNum).sort((a, b) => a - b)
-    let longest = 1
-    let run = 1
-    for (let i = 1; i < days.length; i++) {
-      run = days[i] - days[i - 1] === 1 ? run + 1 : 1
-      if (run > longest) longest = run
-    }
-    const today = toDayNum(todayStr)
-    const set = new Set(days)
-    let cursor = set.has(today) ? today : today - 1
-    let current = 0
-    while (set.has(cursor)) { current++; cursor-- }
-    return { current, longest, totalDays: days.length }
   }
 
 }

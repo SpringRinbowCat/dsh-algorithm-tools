@@ -215,13 +215,6 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       const focus = store.currentFocus(todayStr)
       const focusTags = focus?.tags ?? []
 
-      // 计划里今天已经指派了题的话，不再重复抽它们
-      const planKeys = new Set(
-        store.getTasksByDate(todayStr)
-          .filter((t) => t.problemKey && t.platform)
-          .map((t) => String(t.platform) + ':' + String(t.problemKey)),
-      )
-
       const reasonOf = (p: { problemKey: string; difficulty: number | null; tags: string[] }): string => {
         const bits: string[] = []
         const hitWeak = p.tags.filter((t) => weakTags.includes(t))
@@ -312,7 +305,6 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
         }))
       } else {
         const candidates: CandidateProblem[] = store.getUnsolvedCandidates()
-          .filter((p) => !planKeys.has(p.platform + ':' + p.problemKey))
           .map((p) => ({
             id: p.id,
             platform: p.platform,
@@ -373,13 +365,6 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
           `chore(today): ${todayStr} 今日训练安排`)
       }
 
-      // 到期复习 + 计划进度
-      const tasks = store.getTasksByDate(todayStr)
-      const checked = tasks.filter((t) => t.checked).length
-      const planProblems = tasks
-        .filter((t) => t.problemKey && t.platform)
-        .map((t) => ({ problemKey: t.problemKey, url: t.url ?? null, title: t.title }))
-
       return {
         ok: true,
         data: {
@@ -401,8 +386,6 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
           bands: bands.map((b) => ({ ...b, problems: b.problems.map(({ reason, ...rest }) => rest) })),
           bandReasons: bands.flatMap((b) => b.problems.map((p) => ({ problemKey: p.problemKey, reason: p.reason }))),
           focus: focus ? { week: focus.week, direction: focus.direction, tags: focus.tags } : null,
-          planProblems,
-          planProgress: tasks.length > 0 ? { total: tasks.length, checked } : null,
         },
       }
     },

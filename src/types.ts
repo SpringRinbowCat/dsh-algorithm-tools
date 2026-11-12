@@ -71,4 +71,3 @@ export interface ContestInfo {
   url: string
 }
 
-export type TaskKind = 'practice' | 'review' | 'topic' | 'contest'

@@ -4,7 +4,7 @@
 
 把 Codeforces / AtCoder 的刷题数据接进 DSH：同步提交、弱项分析、每日三档训练、Rank 复盘、赛事列表、日历打卡。能力分两层：
 
-- **12 个 `icpc_*` agent 工具** — 在对话里直接让 AI 帮你同步、选题、复盘
+- **10 个 `icpc_*` agent 工具** — 在对话里直接让 AI 帮你同步、选题、复盘
 - **右侧面板** — 日历 / 数据概览 / 赛事 三个视图，外加一键功能按钮
 
 当前版本 **0.1.6**。
@@ -37,7 +37,7 @@ icpc_today                                   # 生成今天的训练
 
 | 视图 | 内容 |
 |---|---|
-| **日历** | 近 84 天的训练热力图、连续打卡、今日训练进度、计划任务进度 |
+| **日历** | 近 12 周训练热力图、连续打卡、今日训练进度 |
 | **数据概览** | 提交/AC 统计、难度分布、标签分布、12 周趋势、弱项 |
 | **赛事** | CF + AtCoder 近期比赛（进行中 / 即将开始） |
 
@@ -55,7 +55,7 @@ icpc_today                                   # 生成今天的训练
 
 ---
 
-## Agent 工具（12 个）
+## Agent 工具（10 个）
 
 | 工具 | 主要 action / 参数 | 说明 |
 |---|---|---|
@@ -63,8 +63,6 @@ icpc_today                                   # 生成今天的训练
 | `icpc_sync_all` | `contestId` | 同步 + 处理 `rank/_pending` + 提交推送仓库 |
 | `icpc_stats` | `type`(overall/weakness/trend) | 统计分析 |
 | `icpc_today` | `consolidation`/`core`/`challenge`/`rotate`/`windowDays` | 今日三档训练，写入 `<日期>.md` |
-| `icpc_generate_plan` | `days`（默认 14） | 生成系统化训练计划 |
-| `icpc_manage_plan` | `list/detail/checkin/uncheck/delete/import/update_task/delete_task` | 计划管理 |
 | `icpc_review` | `contests` / `contest` | Rank 复盘 |
 | `icpc_contests` | `action`(upcoming/finished) | 赛事列表 |
 | `icpc_checkin` | `status/streak/month/date/checkin/uncheck` | 日历打卡 |
@@ -99,10 +97,11 @@ codeforces/
 ├── practice/<YYYY-MM-DD>/<题目>/<题目>.cpp     # 日常训练 & 赛后补题
 ├── practice/<YYYY-MM-DD>/<YYYY-MM-DD>.md       # 当天训练安排
 ├── rank/<比赛号>/<比赛号><题号>/<比赛号><题号>.cpp   # 比赛代码
-└── taskList/<开始日期>.md                       # 训练计划（计划真相源）
 ```
 
 兼容旧格式：`practise/<日期>/...`；只要目录名或 `.cpp` 文件名能匹配 `2283C` / `1858E1` 这类题号即可。
+
+> 0.1.7 起移除了独立的「训练计划」体系（计划视图、计划按钮、`taskList/*.md`、`icpc_generate_plan`/`icpc_manage_plan`）。每日训练本身已经覆盖了它的作用。
 
 ### 比赛当场不输比赛号：`rank/_pending`
 
@@ -119,7 +118,7 @@ codeforces/
 `icpc_today` / `icpc_sync` / `icpc_generate_plan` 动手前都会 `git pull`。pull 冲突时：
 
 1. `git rebase --abort` / `merge --abort`，不让仓库卡在冲突状态
-2. 只把「安排类」路径强制对齐远端（`practice/<日期>/<日期>.md`、`taskList/`）
+2. 只把「安排类」路径强制对齐远端（`practice/<日期>/<日期>.md`）
 3. 同一批差异里的 `*.cpp` 也按远端覆盖，其他文件不动
 4. 对齐后立即同步进面板，不再追问
 
@@ -145,7 +144,7 @@ icpc_sync platform=codeforces
 
 | 内容 | 位置 |
 |---|---|
-| 插件状态（题库缓存 / 提交 / 计划 / 训练索引 / 设置） | `$DSH_HOME/.icpc-data/icpc-state.json`，未设 `DSH_HOME` 时是 `~/.icpc-data/icpc-state.json` |
+| 插件状态（题库缓存 / 提交 / 训练索引 / 设置） | `$DSH_HOME/.icpc-data/icpc-state.json`，未设 `DSH_HOME` 时是 `~/.icpc-data/icpc-state.json` |
 | 启动探针 | 同目录 `icpc-boot.log`（排查数据目录用） |
 | 训练仓库 | `icpc_settings action=set_local_root` 设置；未设置时依次尝试 `D:\codeforces`、`~/codeforces` |
 
@@ -202,9 +201,8 @@ dsh-algorithm-tools/
 │   │   └── index.ts          # IcpcStore：内存索引 + 防抖落盘
 │   ├── adapters/             # codeforces.ts / atcoder.ts / types.ts
 │   ├── analysis/             # stats / weakness / trend / tags / today（纯函数）
-│   ├── plans/                # planService / weekly / taskList
 │   ├── util/                 # local-scan / local-date / git 等
-│   └── tools/                # 12 个工具，一个文件一个（maintenance.ts 是数据维护）
+│   └── tools/                # 10 个工具，一个文件一个（maintenance.ts 是数据维护）
 ├── client/                   # Client 侧（面板 UI）
 │   ├── index.ts              # apply()：注册 tab、header 按钮、设置项
 │   ├── WorkbenchPanel.tsx    # 主面板：功能按钮 + 视图切换
@@ -212,7 +210,7 @@ dsh-algorithm-tools/
 │   ├── features.ts           # 功能目录（按钮 → 提示词）
 │   ├── betterSidebar.ts      # 有 better-sidebar 时的适配
 │   └── api.ts
-└── tests/                    # 42 个测试（6 个文件）
+└── tests/                    # 37 个测试（5 个文件）
 ```
 
 ---
@@ -280,4 +278,4 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 pnpm test
 ```
 
-42 个用例，覆盖：纯函数分析（难度分档、弱项打分、趋势、Markdown 渲染）、工具按会话注册、客户端功能目录、better-sidebar 描述符、换号后的数据隔离。
+37 个用例，覆盖：纯函数分析（难度分档、弱项打分、趋势、Markdown 渲染）、工具按会话注册、客户端功能目录、better-sidebar 描述符、换号后的数据隔离。

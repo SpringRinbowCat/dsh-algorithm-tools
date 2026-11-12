@@ -91,7 +91,7 @@ function finalizeRank(
 }
 
 function changedPaths(root: string): string[] {
-  const r = spawnSync('git', ['-C', root, 'status', '--porcelain', '--', 'practice', 'rank', 'taskList'], {
+  const r = spawnSync('git', ['-C', root, 'status', '--porcelain', '--', 'practice', 'rank'], {
     encoding: 'utf8',
     timeout: 15_000,
   })
@@ -113,7 +113,7 @@ export function registerSyncAllTool(host: IcpcHost, ctx: Context): () => void {
     description:
       '同步 Codeforces 提交记录，并检查/提交本地训练仓库。' +
       '自动处理 rank/_pending 字母目录：未提供 contestId 时返回 needContestId 和待补全题号，不提交；' +
-      '提供 contestId 后完成目录、文件名、题链重命名，再提交 practice/rank/taskList 中的源码和训练文档并推送。',
+      '提供 contestId 后完成目录、文件名、题链重命名，再提交 practice/rank 中的源码和训练文档并推送。',
     parameters: {
       contestId: {
         type: 'number',
@@ -132,7 +132,7 @@ export function registerSyncAllTool(host: IcpcHost, ctx: Context): () => void {
       const sync = await syncPlatform(host, 'codeforces', handle)
       await store.flush()
 
-      const pull = gitPullForceRemote(root, ['taskList'])
+      const pull = gitPullForceRemote(root, ['practice'])
       const pending = listPendingRank(root)
 
       if (pending.length > 0 && args.contestId == null) {
@@ -190,7 +190,7 @@ export function registerSyncAllTool(host: IcpcHost, ctx: Context): () => void {
         }
       }
 
-      const push = gitCommitPush(root, ['practice', 'rank', 'taskList'], 'chore(sync): 同步训练数据')
+      const push = gitCommitPush(root, ['practice', 'rank'], 'chore(sync): 同步训练数据')
       return {
         ok: push.ok,
         imported: sync.imported,

@@ -17,17 +17,11 @@ export interface Overview {
     date: string
     ac: number
     submissions: number
-    tasks: { total: number; checked: number }
     training: {
       total: number
       completed: number
       started: boolean
       done: boolean
-      remaining: Array<{ problemKey: string; url: string | null }>
-    }
-    planTasks: {
-      total: number
-      completed: number
       remaining: Array<{ problemKey: string; url: string | null }>
     }
     done: boolean
@@ -56,7 +50,6 @@ export interface ContestItem {
 const VIEWS = ['日历', '数据概览', '赛事'] as const
 
 function levelOf(cell: DayCell): 0 | 1 | 2 | 3 {
-  if (cell.done && cell.tasks > 0) return 3
   if (cell.ac >= 3) return 3
   if (cell.ac >= 1) return 2
   if (cell.submissions > 0) return 1
@@ -193,13 +186,12 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
           <div className="icpc-viz__state">
             {t.done
               ? '今日训练已完成'
-              : t.training.total === 0 && t.planTasks.total === 0
+              : t.training.total === 0
                 ? '今日未开始'
                 : '今日训练未完成'}
           </div>
           <div className="icpc-viz__meta">
             训练 {t.training.completed}/{t.training.total}
-            {t.planTasks.total > 0 ? ` + 计划 ${t.planTasks.completed}/${t.planTasks.total}` : ''}
             {' · '}今日累计 AC {t.ac} 题 · 累计提交 {t.submissions} 次
           </div>
         </div>
@@ -222,17 +214,11 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
         {t.advice.items.length > 0 ? (
           <ul>{t.advice.items.map((item, i) => <li key={i}>{item}</li>)}</ul>
         ) : null}
-        {(t.planTasks.remaining.length > 0 || t.training.remaining.length > 0) ? (
+        {t.training.remaining.length > 0 ? (
           <div className="icpc-viz__left">
             {t.training.remaining.map((r) => (r.url
               ? <a key={r.problemKey} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
               : <span key={r.problemKey}>{r.problemKey}</span>))}
-            {t.planTasks.remaining.length > 0 && t.training.remaining.length > 0
-              ? <i className="icpc-viz__sep" aria-hidden="true" />
-              : null}
-            {t.planTasks.remaining.map((r) => (r.url
-              ? <a key={`p-${r.problemKey}`} href={r.url} target="_blank" rel="noreferrer" title={`打开 ${r.problemKey}`}>{r.problemKey}</a>
-              : <span key={`p-${r.problemKey}`}>{r.problemKey}</span>))}
           </div>
         ) : null}
       </div>
@@ -244,7 +230,7 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
               <div
                 key={cell.date}
                 className={`icpc-viz__cell icpc-viz__cell--${levelOf(cell)}`}
-                title={`${cell.date} · AC ${cell.ac} · 提交 ${cell.submissions}${cell.trainingTotal > 0 ? ` · 训练 ${cell.trainingDone}/${cell.trainingTotal}` : ''}${cell.tasks > 0 ? ` · 任务 ${cell.checked}/${cell.tasks}` : ''}`}
+                title={`${cell.date} · AC ${cell.ac} · 提交 ${cell.submissions}${cell.trainingTotal > 0 ? ` · 训练 ${cell.trainingDone}/${cell.trainingTotal}` : ''}`}
               />
             ))}
           </div>

@@ -35,13 +35,12 @@ interface SyncSummary {
   bank: { platform: string; fetched: number; inserted: number } | null
   reviews: { added: number; localProblems: number } | null
   /** 今日训练完成后自动勾选的计划任务数 */
-  autoChecked: number
   throttled: boolean
 }
 
 async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
   const settings = host.store.getSettings()
-  const summary: SyncSummary = { ok: true, synced: [], bank: null, reviews: null, autoChecked: 0, throttled: false }
+  const summary: SyncSummary = { ok: true, synced: [], bank: null, reviews: null, throttled: false }
   const now = Date.now()
   const threshold = force ? FORCE_THROTTLE_MS : THROTTLE_MS
 
@@ -78,7 +77,6 @@ async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
   // 今日训练已完成 → 自动勾掉当天的计划任务，避免计划与日历两套账
   const today = localDay()
   if (buildTodayStatus(host.store, today).done) {
-    summary.autoChecked = host.store.autoCheckPlanTasks(today)
   }
 
   return summary
