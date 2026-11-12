@@ -1,0 +1,54 @@
+{
+  "format": 1,
+  "title": {
+    "en": "SpringRinbowCat plugin index",
+    "zh": "SpringRinbowCat 插件索引"
+  },
+  "description": {
+    "en": "Bundles published by SpringRinbowCat.",
+    "zh": "SpringRinbowCat 发布的 DSH 组合包。"
+  },
+  "metadata": {
+    "categories": {},
+    "labels": {},
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-algorithm-tools",
+      "title": {
+        "en": "Algorithm Practice Space",
+        "zh": "算法训练台"
+      },
+      "description": {
+        "en": "Codeforces/AtCoder practice sync, weakness analysis, daily three-band training, rank review, contests and check-ins.",
+        "zh": "Codeforces/AtCoder 刷题同步、弱项分析、每日三档训练、Rank 复盘、赛事与打卡。"
+      },
+      "author": "SpringRinbowCat",
+      "homepage": "https://github.com/SpringRinbowCat/dsh-algorithm-tools",
+      "repository": {
+        "url": "https://github.com/SpringRinbowCat/dsh-algorithm-tools"
+      },
+      "metadata": {
+        "keywords": [
+          "codeforces",
+          "atcoder",
+          "icpc",
+          "training"
+        ],
+        "labels": [],
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "0.2.0",
+          "publishTimestamp": 1794478075,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {}
+        }
+      ]
+    }
+  ]
+}
