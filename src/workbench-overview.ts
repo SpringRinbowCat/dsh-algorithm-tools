@@ -22,7 +22,6 @@ export interface TodayStatus {
   date: string
   /** 今日 AC 总数（所有题，不限于训练题） */
   ac: number
-  submissions: number
   training: {
     total: number
     completed: number
@@ -116,7 +115,6 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     return {
       date: todayStr,
       ac: cell.ac,
-      submissions: cell.submissions,
       training: { ...training, remaining: left },
       done: false,
       advice: {
@@ -132,7 +130,6 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
   return {
     date: todayStr,
     ac: cell.ac,
-    submissions: cell.submissions,
     training: { ...training, remaining: [] },
     done: true,
     advice: {

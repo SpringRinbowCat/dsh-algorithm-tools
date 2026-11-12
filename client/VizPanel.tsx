@@ -16,7 +16,6 @@ export interface Overview {
   today: {
     date: string
     ac: number
-    submissions: number
     training: {
       total: number
       completed: number
@@ -192,7 +191,7 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
           </div>
           <div className="icpc-viz__meta">
             训练 {t.training.completed}/{t.training.total}
-            {' · '}今日累计 AC {t.ac} 题 · 累计提交 {t.submissions} 次
+            {' · '}今日累计 AC {t.ac} 题
           </div>
         </div>
         <div className="icpc-viz__streak">
