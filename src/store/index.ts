@@ -96,6 +96,10 @@ export class IcpcStore {
         if (!this.state.settings.accounts) this.state.settings.accounts = {}
         if (!this.state.trainingIndex) this.state.trainingIndex = {}
         if (!this.state.bankSyncedAt) this.state.bankSyncedAt = null
+        // 0.1.7 起移除训练计划体系：丢掉旧字段，避免它一直被写回磁盘
+        if ('plans' in (this.state as unknown as Record<string, unknown>)) {
+          delete (this.state as unknown as Record<string, unknown>).plans
+        }
         // 迁移：旧版本写入的提交没有 handle，补成当前绑定的账号，
         // 这样以后换号时它们会自动被过滤掉，而不是混进新账号的统计
         for (const s of this.state.submissions) {
