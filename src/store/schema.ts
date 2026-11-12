@@ -22,31 +22,6 @@ export interface SubmissionRecord {
   handle?: string
 }
 
-export interface TemplateProgressRecord {
-  templateId: string
-  status: 'todo' | 'learning' | 'mastered'
-  note: string | null
-  code: string | null
-  idea: string | null
-  complexity: string | null
-  url: string | null
-  masteredAt: string | null
-}
-
-export interface CustomTemplateRecord {
-  id: number
-  categoryKey: string
-  name: string
-  difficulty: number
-  tags: string[]
-  code: string
-  idea: string | null
-  complexity: string | null
-  url: string | null
-  createdAt: string
-  updatedAt: string | null
-}
-
 export interface PlatformAccountRecord {
   platform: PlatformId
   handle: string
@@ -76,8 +51,6 @@ export interface SettingsRecord {
 export interface StoreState {
   problems: ProblemRecord[]
   submissions: SubmissionRecord[]
-  templateProgress: TemplateProgressRecord[]
-  customTemplates: CustomTemplateRecord[]
   settings: SettingsRecord
   /** 每日训练索引：日期 → 当天「今日训练」抽到的题（`platform:problemKey`），用于判定今日是否完成 */
   trainingIndex: Record<string, string[]>
@@ -89,8 +62,6 @@ export function defaultState(): StoreState {
   return {
     problems: [],
     submissions: [],
-    templateProgress: [],
-    customTemplates: [],
     trainingIndex: {},
     bankSyncedAt: null,
     settings: {

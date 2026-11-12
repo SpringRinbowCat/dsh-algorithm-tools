@@ -68,7 +68,7 @@ icpc_today                                   # 生成今天的训练
 | `icpc_checkin` | `status/streak/month/date/checkin/uncheck` | 日历打卡 |
 | `icpc_problems` | `platform/difficulty/tag/q/bank` | 浏览题库 |
 | `icpc_settings` | `get/set_account/set_ai/set_adapter/set_cookies/set_reminder/set_local_root` | 设置（返回时密钥脱敏） |
-| `icpc_maintenance` | `stats/clear_submissions/clear_all` | 数据维护：查看量级、清空提交/复习 |
+| `icpc_maintenance` | `stats/clear_submissions/clear_all` | 数据维护：查看量级、清空提交、清理旧字段 |
 
 > 工具是**按会话注册**的：新会话需要先打开一次右侧面板。没打开时调用会报 `unknown tool "icpc_*"`。
 

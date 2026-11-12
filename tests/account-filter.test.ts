@@ -101,3 +101,22 @@ describe('换号时给旧记录打标（跨设备一致性）', () => {
     assert.equal(store.getSubmissionRows().length, 0)
   })
 })
+
+describe('旧字段清理', () => {
+  it('加载后丢掉 plans / reviews / templateProgress / customTemplates', async () => {
+    const state = {
+      problems: [],
+      submissions: [],
+      plans: [{ id: 1 }],
+      reviews: [{ id: 1 }],
+      templateProgress: [{ templateId: 'x' }],
+      customTemplates: [{ id: 'x' }],
+      trainingIndex: {},
+      bankSyncedAt: null,
+      settings: { accounts: {} },
+    }
+    const store = new IcpcStore(memFs({ [STATE]: JSON.stringify(state) }) as never, '/data')
+    await store.awaitReady()
+    assert.deepEqual(store.purgeLegacyFields(), [])
+  })
+})

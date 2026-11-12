@@ -33,14 +33,13 @@ interface SyncSummary {
   ok: true
   synced: Array<{ platform: string; skipped: boolean; imported?: number; errors?: string[] }>
   bank: { platform: string; fetched: number; inserted: number } | null
-  reviews: { added: number; localProblems: number } | null
   /** 今日训练完成后自动勾选的计划任务数 */
   throttled: boolean
 }
 
 async function runSync(host: IcpcHost, force = false): Promise<SyncSummary> {
   const settings = host.store.getSettings()
-  const summary: SyncSummary = { ok: true, synced: [], bank: null, reviews: null, throttled: false }
+  const summary: SyncSummary = { ok: true, synced: [], bank: null, throttled: false }
   const now = Date.now()
   const threshold = force ? FORCE_THROTTLE_MS : THROTTLE_MS
 

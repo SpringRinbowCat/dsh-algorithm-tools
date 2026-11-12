@@ -1,5 +1,5 @@
 /**
- * 共享同步逻辑：供 sync 工具和 templates sync_examples 复用。
+ * 共享同步逻辑：供 icpc_sync / icpc_sync_all 复用。
  * 调用适配器拉取提交 → upsert problems → insert submissions → 更新账号同步时间。
  */
 

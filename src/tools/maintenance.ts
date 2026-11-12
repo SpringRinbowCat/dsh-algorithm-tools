@@ -12,7 +12,7 @@ export function registerMaintenanceTool(host: IcpcHost, ctx: Context): () => voi
     name: 'icpc_maintenance',
     description:
       '数据维护。action=clear_submissions 清空全部提交记录（换号或清理历史时用）；' +
-      'action=clear_all 同时清空提交和历史复习数据；action=stats 只查看当前数据量。',
+      'action=clear_all 在清空提交的同时清掉旧版本遗留字段（计划/复习/模板）；action=stats 只查看当前数据量。',
     parameters: {
       action: {
         type: 'string',
@@ -31,13 +31,13 @@ export function registerMaintenanceTool(host: IcpcHost, ctx: Context): () => voi
           handle: store.getAccount('codeforces')?.handle ?? null,
         }
       }
-      const includeReviews = action === 'clear_all'
-      const removed = store.clearSubmissions({ includeReviews })
+      const removed = store.clearSubmissions()
+      const purged = action === 'clear_all' ? store.purgeLegacyFields() : []
       await store.flush()
       return {
         action,
         removedSubmissions: removed.submissions,
-        removedReviews: removed.reviews,
+        purgedLegacyFields: purged,
         handle: store.getAccount('codeforces')?.handle ?? null,
         flushed: true,
       }

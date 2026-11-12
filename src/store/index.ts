@@ -89,7 +89,6 @@ export class IcpcStore {
         const raw = await this.fs.readFile(filePath)
         this.state = { ...defaultState(), ...JSON.parse(raw) }
         // 向前兼容：确保新字段存在
-        if (!this.state.customTemplates) this.state.customTemplates = []
         if (!this.state.settings.adapterEnabled) this.state.settings.adapterEnabled = {}
         if (!this.state.settings.cookies) this.state.settings.cookies = {}
         if (!this.state.settings.reminder) this.state.settings.reminder = { enabled: false, time: '20:00' }
@@ -113,6 +112,8 @@ export class IcpcStore {
       } catch { /* 备份失败就算了，至少别崩 */ }
     }
     this.rebuildSubIndex()
+    // 计划/复习库/模板库都已下线：启动时清掉旧 JSON 里残留的字段
+    this.purgeLegacyFields()
   }
 
   scheduleSave(): void {
@@ -407,17 +408,28 @@ export class IcpcStore {
   }
 
   /** 清空提交记录（换号/清理历史用）。内存和磁盘一起更新，避免被运行中的进程写回。 */
-  clearSubmissions(options: { includeReviews?: boolean } = {}): { submissions: number; reviews: number } {
-    const removedSubs = this.state.submissions.length
-    const legacy = this.state as unknown as { reviews?: unknown[] }
-    const removedReviews = options.includeReviews ? (legacy.reviews?.length ?? 0) : 0
+  clearSubmissions(): { submissions: number } {
+    const removed = this.state.submissions.length
     this.state.submissions = []
     this.subIndex = new Map()
     this.sortedSubs = null
-    if (options.includeReviews) legacy.reviews = []
     this.rebuildSubIndex()
     this.scheduleSave()
-    return { submissions: removedSubs, reviews: removedReviews }
+    return { submissions: removed }
+  }
+
+  /** 清掉旧版本遗留字段（计划 / 复习库 / 模板库都已下线），返回被清掉的字段名 */
+  purgeLegacyFields(): string[] {
+    const legacy = this.state as unknown as Record<string, unknown>
+    const removed: string[] = []
+    for (const key of ['plans', 'reviews', 'templateProgress', 'customTemplates']) {
+      if (key in legacy) {
+        delete legacy[key]
+        removed.push(key)
+      }
+    }
+    if (removed.length) this.scheduleSave()
+    return removed
   }
 
   getKnownExternalIds(platform?: PlatformId): Set<string> {
