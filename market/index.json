@@ -1,7 +1,8 @@
 {
   "format": 1,
   "title": {
-    "en": "algorithm"
+    "en": "algorithm",
+    "zh": "algorithm"
   },
   "description": {
     "en": "Algorithm practice plugins by SpringRinbowCat."
