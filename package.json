@@ -1,7 +1,6 @@
 {
   "name": "dsh-algorithm-tools",
   "version": "0.2.0",
-  "private": true,
   "license": "MIT",
   "type": "module",
   "description": "算法训练台（DeepSeek Harness 插件）：Codeforces/AtCoder 刷题同步、弱项分析、每日三档训练、Rank 复盘、赛事与打卡",
@@ -32,7 +31,8 @@
     "typecheck": "tsc --noEmit",
     "typecheck:client": "tsc --noEmit -p tsconfig.client.json",
     "test": "tsx --test tests/**/*.test.ts",
-    "prepublishOnly": "pnpm build && pnpm test"
+    "prepublishOnly": "npm run build:ci",
+    "build:ci": "tsdown && node scripts/wrap-client.mjs && tsx --test tests/**/*.test.ts"
   },
   "dsh": {
     "bundle": {
