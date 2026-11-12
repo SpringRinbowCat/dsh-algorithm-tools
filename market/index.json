@@ -1,12 +1,10 @@
 {
   "format": 1,
   "title": {
-    "en": "SpringRinbowCat plugin index",
-    "zh": "SpringRinbowCat 插件索引"
+    "en": "algorithm"
   },
   "description": {
-    "en": "Bundles published by SpringRinbowCat.",
-    "zh": "SpringRinbowCat 发布的 DSH 组合包。"
+    "en": "Algorithm practice plugins by SpringRinbowCat."
   },
   "metadata": {
     "categories": {},
