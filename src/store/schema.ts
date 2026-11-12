@@ -18,6 +18,8 @@ export interface SubmissionRecord {
   language?: string
   submittedAt: string
   externalId: string
+  /** 产生这条提交的 Codeforces 用户名；换号后用于把旧账号的数据过滤掉 */
+  handle?: string
 }
 
 export interface PlanTaskRecord {

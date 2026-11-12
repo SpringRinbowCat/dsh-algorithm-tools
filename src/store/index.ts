@@ -78,7 +78,9 @@ export class IcpcStore {
   /** 获取按时间降序排序的提交（缓存） */
   private getSortedSubs(): SubmissionRecord[] {
     if (!this.sortedSubs) {
-      this.sortedSubs = [...this.state.submissions].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+      this.sortedSubs = this.state.submissions
+        .filter((s) => this.belongsToCurrentAccount(s))
+        .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
     }
     return this.sortedSubs
   }
@@ -98,6 +100,11 @@ export class IcpcStore {
         if (!this.state.settings.accounts) this.state.settings.accounts = {}
         if (!this.state.trainingIndex) this.state.trainingIndex = {}
         if (!this.state.bankSyncedAt) this.state.bankSyncedAt = null
+        // 迁移：旧版本写入的提交没有 handle，补成当前绑定的账号，
+        // 这样以后换号时它们会自动被过滤掉，而不是混进新账号的统计
+        for (const s of this.state.submissions) {
+          if (!s.handle) s.handle = this.state.settings.accounts[s.platform]?.handle
+        }
       }
     } catch (e) {
       const msg = (e as Error).message
@@ -351,6 +358,22 @@ export class IcpcStore {
 
   // ---------- Submissions ----------
 
+  /** 当前绑定的账号名（换号后旧账号的提交不再计入统计） */
+  private handleFor(platform: PlatformId): string | undefined {
+    return this.state.settings.accounts[platform]?.handle
+  }
+
+  /**
+   * 这条提交是否属于当前账号。
+   * 没有 handle 的历史记录（旧版本写入的）视为属于当前账号，避免升级后统计突然清空；
+   * load() 里会把它们补上 handle。
+   */
+  private belongsToCurrentAccount(s: SubmissionRecord): boolean {
+    const h = this.handleFor(s.platform)
+    if (!h) return true
+    return !s.handle || s.handle === h
+  }
+
   insertSubmissions(subs: SubmissionRecord[]): { imported: number; skipped: number } {
     const existing = new Set(this.state.submissions.map((s) => s.externalId))
     let imported = 0
@@ -400,6 +423,7 @@ export class IcpcStore {
     )
     return this.state.submissions
       .filter((s) => {
+        if (!this.belongsToCurrentAccount(s)) return false
         if (filter.platform && s.platform !== filter.platform) return false
         if (filter.from && s.submittedAt < filter.from) return false
         if (filter.to && s.submittedAt > filter.to) return false
@@ -420,13 +444,17 @@ export class IcpcStore {
 
   /** 获取某道题的提交记录（用索引，O(1) 查找） */
   getSubmissionsForProblem(platform: PlatformId, problemKey: string): SubmissionRecord[] {
-    return this.subIndex.get(`${platform}:${problemKey}`) ?? []
+    return (this.subIndex.get(`${platform}:${problemKey}`) ?? []).filter((s) =>
+      this.belongsToCurrentAccount(s),
+    )
   }
 
   getAcKeys(): Set<string> {
     const set = new Set<string>()
     for (const s of this.state.submissions) {
-      if (s.verdict === 'AC') set.add(`${s.platform}:${s.problemKey}`)
+      if (s.verdict !== 'AC') continue
+      if (!this.belongsToCurrentAccount(s)) continue
+      set.add(`${s.platform}:${s.problemKey}`)
     }
     return set
   }

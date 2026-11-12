@@ -73,6 +73,7 @@ export async function syncPlatform(
         language: s.language,
         submittedAt: s.submittedAt,
         externalId: s.externalId,
+        handle: store.getAccount(s.problem.platform)?.handle,
       })),
     )
     result.imported = insertResult.imported
