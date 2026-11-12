@@ -1,5 +1,5 @@
 /**
- * 打开训练台时自动增量同步：POST /icpc-workbench/sync
+ * 打开训练台时自动增量同步：POST /algorithm-tools/sync
  *
  * 节流：同一平台距上次同步 < 30 分钟直接跳过，避免每次切面板都打 API。
  * 顺带做两件事：题库为空时补一次题库；同步完成后从本地 Codeforces 目录收复习题。
@@ -100,7 +100,7 @@ export function registerSyncRoute(
   ctx.effect(() => {
     const off = ctx.webServer!.register({
       kind: 'exact',
-      path: '/icpc-workbench/sync',
+      path: '/algorithm-tools/sync',
       async handler(req: IncomingMessage, res: ServerResponse) {
         if (req.method !== 'POST') {
           res.setHeader('allow', 'POST')

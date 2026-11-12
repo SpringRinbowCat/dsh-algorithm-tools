@@ -52,9 +52,9 @@ export function WorkbenchPanel({
     let alive = true
     const load = (): void => {
       Promise.all([
-        readJson('/icpc-workbench/overview?days=84'),
-        readJson('/icpc-workbench/stats'),
-        readJson('/icpc-workbench/contests'),
+        readJson('/algorithm-tools/overview?days=84'),
+        readJson('/algorithm-tools/stats'),
+        readJson('/algorithm-tools/contests'),
       ])
         .then(([o, s, c]: Array<{ ok?: boolean; error?: string } & Record<string, unknown>>) => {
           if (!alive) return
@@ -65,7 +65,7 @@ export function WorkbenchPanel({
             const done = (o as unknown as Overview).today?.done === true
             if (done && Date.now() - lastKickRef.current > 10 * 60 * 1000) {
               lastKickRef.current = Date.now()
-              readJson('/icpc-workbench/sync?force=1', { method: 'POST' })
+              readJson('/algorithm-tools/sync?force=1', { method: 'POST' })
                 .then(() => { if (alive) loadRef.current() })
                 .catch(() => {})
             }
@@ -84,7 +84,7 @@ export function WorkbenchPanel({
     loadRef.current = load
     load()
     // 打开训练台时自动增量同步（服务端 30 分钟内只拉一次），完成后刷新概览
-    readJson('/icpc-workbench/sync', { method: 'POST' })
+    readJson('/algorithm-tools/sync', { method: 'POST' })
       .then((res: { ok?: boolean; synced?: Array<{ skipped: boolean }> } | null) => {
         if (!alive) return
         if (res?.ok && res.synced?.some((s) => !s.skipped)) load()
@@ -133,16 +133,16 @@ export function WorkbenchPanel({
   }
 
   return (
-    <div className="icpc-workbench">
+    <div className="algorithm-tools">
       <style>{PANEL_CSS}</style>
-      <div className="icpc-workbench__scroll">
-      <header className="icpc-workbench__header">
-        <div className="icpc-workbench__mark">
+      <div className="algorithm-tools__scroll">
+      <header className="algorithm-tools__header">
+        <div className="algorithm-tools__mark">
           <Icon name="trophy" size={16} />
         </div>
         <div>
           <h2>Algorithm Practice Space</h2>
-          <p>训练工作台 · v0.1.9</p>
+          <p>训练工作台 · v0.2.0</p>
         </div>
       </header>
 
@@ -154,34 +154,34 @@ export function WorkbenchPanel({
         onExtraTraining={() => void runFeature(WORKBENCH_FEATURES.find((f) => f.id === 'extra')!)}
       />
 
-      {error ? <div className="icpc-workbench__error" role="alert">{error}</div> : null}
+      {error ? <div className="algorithm-tools__error" role="alert">{error}</div> : null}
 
-      <div className="icpc-workbench__groups">
+      <div className="algorithm-tools__groups">
         {FEATURE_GROUPS.map((group) => (
-          <section className="icpc-workbench__group" key={group.id}>
+          <section className="algorithm-tools__group" key={group.id}>
             <h3>{group.label}</h3>
-            <div className="icpc-workbench__items">
+            <div className="algorithm-tools__items">
               {WORKBENCH_FEATURES.filter((feature) => feature.group === group.id && !feature.hidden).map((feature) => (
                 <button
-                  className="icpc-workbench__item"
+                  className="algorithm-tools__item"
                   type="button"
                   key={feature.id}
                   disabled={busy !== null || !sessionId || !inputActions}
                   onClick={() => void runFeature(feature)}
                 >
-                  <span className="icpc-workbench__icon">
+                  <span className="algorithm-tools__icon">
                     <Icon name={feature.icon} size={17} />
                   </span>
-                  <span className="icpc-workbench__copy">
-                    <span className="icpc-workbench__label">
+                  <span className="algorithm-tools__copy">
+                    <span className="algorithm-tools__label">
                       {feature.label}
                       {feature.id === 'today' && showTodayDot
-                        ? <i className="icpc-workbench__dot" aria-label="今天还没抽今日训练" title="今天还没抽今日训练" />
+                        ? <i className="algorithm-tools__dot" aria-label="今天还没抽今日训练" title="今天还没抽今日训练" />
                         : null}
                     </span>
-                    <span className="icpc-workbench__description">{feature.description}</span>
+                    <span className="algorithm-tools__description">{feature.description}</span>
                   </span>
-                  <span className="icpc-workbench__status" aria-hidden="true">
+                  <span className="algorithm-tools__status" aria-hidden="true">
                     {busy === feature.id ? '…' : ''}
                   </span>
                 </button>
@@ -245,7 +245,7 @@ function Icon({ name, size = 16 }: { name: FeatureIcon | 'trophy'; size?: number
 }
 
 const PANEL_CSS = `
-.icpc-workbench {
+.algorithm-tools {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -256,7 +256,7 @@ const PANEL_CSS = `
   background: var(--dsw-alias-bg-layer-1);
   font: inherit;
 }
-.icpc-workbench__scroll {
+.algorithm-tools__scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -265,13 +265,13 @@ const PANEL_CSS = `
   padding: 14px 14px 64px;
   scrollbar-gutter: stable;
 }
-.icpc-workbench__header {
+.algorithm-tools__header {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
 }
-.icpc-workbench__mark {
+.algorithm-tools__mark {
   display: grid;
   width: 30px;
   height: 30px;
@@ -281,37 +281,37 @@ const PANEL_CSS = `
   background: var(--dsw-alias-interactive-bg-hover);
   border-radius: 8px;
 }
-.icpc-workbench h2,
-.icpc-workbench h3,
-.icpc-workbench p {
+.algorithm-tools h2,
+.algorithm-tools h3,
+.algorithm-tools p {
   margin: 0;
 }
-.icpc-workbench h2 {
+.algorithm-tools h2 {
   font-size: 15px;
   font-weight: 600;
   line-height: 1.35;
 }
-.icpc-workbench__header p {
+.algorithm-tools__header p {
   margin-top: 2px;
   color: var(--dsw-alias-label-caption);
   font-size: 12px;
 }
-.icpc-workbench__groups {
+.algorithm-tools__groups {
   display: grid;
   gap: 18px;
 }
-.icpc-workbench__group h3 {
+.algorithm-tools__group h3 {
   margin: 0 0 7px;
   color: var(--dsw-alias-label-caption);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
 }
-.icpc-workbench__items {
+.algorithm-tools__items {
   display: grid;
   gap: 4px;
 }
-.icpc-workbench__item {
+.algorithm-tools__item {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) 14px;
   align-items: center;
@@ -326,37 +326,37 @@ const PANEL_CSS = `
   border-radius: 8px;
   cursor: pointer;
 }
-.icpc-workbench__item:hover:not(:disabled) {
+.algorithm-tools__item:hover:not(:disabled) {
   background: var(--dsw-alias-interactive-bg-hover);
   border-color: var(--dsw-alias-border-l4);
 }
-.icpc-workbench__item:disabled {
+.algorithm-tools__item:disabled {
   cursor: default;
   opacity: .6;
 }
-.icpc-workbench__icon {
+.algorithm-tools__icon {
   display: grid;
   width: 28px;
   height: 28px;
   place-items: center;
   color: var(--dsw-alias-label-secondary);
 }
-.icpc-workbench__copy {
+.algorithm-tools__copy {
   display: grid;
   min-width: 0;
   gap: 2px;
 }
-.icpc-workbench__label,
-.icpc-workbench__description {
+.algorithm-tools__label,
+.algorithm-tools__description {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.icpc-workbench__label {
+.algorithm-tools__label {
   font-size: 13px;
   line-height: 1.35;
 }
-.icpc-workbench__dot {
+.algorithm-tools__dot {
   display: inline-block;
   width: 6px;
   height: 6px;
@@ -366,17 +366,17 @@ const PANEL_CSS = `
   vertical-align: middle;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18);
 }
-.icpc-workbench__description {
+.algorithm-tools__description {
   color: var(--dsw-alias-label-caption);
   font-size: 11px;
   line-height: 1.35;
 }
-.icpc-workbench__status {
+.algorithm-tools__status {
   color: var(--dsw-alias-label-tertiary);
   font-size: 13px;
   text-align: center;
 }
-.icpc-workbench__error {
+.algorithm-tools__error {
   margin-bottom: 12px;
   padding: 8px 10px;
   color: var(--dsw-alias-label-primary);

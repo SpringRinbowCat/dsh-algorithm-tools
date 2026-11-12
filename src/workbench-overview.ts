@@ -230,7 +230,7 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
   ctx.effect(() => {
     const off = ctx.webServer!.register({
       kind: 'exact',
-      path: '/icpc-workbench/overview',
+      path: '/algorithm-tools/overview',
       handler: async (req: IncomingMessage, res: ServerResponse) => {
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')
@@ -259,7 +259,7 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
 
     const offStats = ctx.webServer!.register({
       kind: 'exact',
-      path: '/icpc-workbench/stats',
+      path: '/algorithm-tools/stats',
       handler: async (req: IncomingMessage, res: ServerResponse) => {
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')

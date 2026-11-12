@@ -1,4 +1,4 @@
-export const BETTER_SIDEBAR_TAB_ID = 'dsh-algo-trainer:workbench'
+export const BETTER_SIDEBAR_TAB_ID = 'algorithm-tools:workbench'
 
 export interface BetterSidebarSessionScope {
   sessionId: string

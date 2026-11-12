@@ -11,7 +11,7 @@ interface ErrorResponse {
 }
 
 export async function activateWorkbench(sessionId: string): Promise<ActivationResponse> {
-  const response = await fetch('/icpc-workbench/activate', {
+  const response = await fetch('/algorithm-tools/activate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ sessionId }),

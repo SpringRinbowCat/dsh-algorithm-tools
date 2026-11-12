@@ -128,7 +128,7 @@ export function registerActivationRoute(ctx: Context, host: IcpcHost): void {
   ctx.effect(() => {
     const offRoute = ctx.webServer!.register({
       kind: 'exact',
-      path: '/icpc-workbench/activate',
+      path: '/algorithm-tools/activate',
       async handler(req, res) {
         if (req.method !== 'POST') {
           res.setHeader('allow', 'POST')

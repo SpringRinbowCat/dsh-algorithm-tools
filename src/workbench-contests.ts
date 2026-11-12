@@ -1,5 +1,5 @@
 /**
- * Codeforces 赛事可视化：GET /icpc-workbench/contests
+ * Codeforces 赛事可视化：GET /algorithm-tools/contests
  * 只取「还没结束」的 CF 比赛，按开始时间升序，10 分钟内存缓存。
  */
 
@@ -65,7 +65,7 @@ export function registerContestsRoute(
   ctx.effect(() => {
     const off = ctx.webServer!.register({
       kind: 'exact',
-      path: '/icpc-workbench/contests',
+      path: '/algorithm-tools/contests',
       async handler(req: IncomingMessage, res: ServerResponse) {
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')

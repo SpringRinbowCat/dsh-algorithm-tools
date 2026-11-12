@@ -10,8 +10,8 @@ import { HeaderAction, WorkbenchGlyph, WorkbenchPanel } from './WorkbenchPanel.t
 export const inject = ['slots', 'sidebarRight', 'sidebarRightTabs']
 export const name = 'dsh-algorithm-tools'
 
-const TAB_ID = 'dsh-algo-trainer.workbench'
-const TAB_KIND = 'icpc-workbench'
+const TAB_ID = 'algorithm-tools.workbench'
+const TAB_KIND = 'algorithm-tools'
 
 interface SlotsLike {
   inject(key: string, cb: () => unknown): () => void

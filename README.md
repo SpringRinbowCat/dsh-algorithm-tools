@@ -190,12 +190,12 @@ dsh-algorithm-tools/
 ├── scripts/wrap-client.mjs   # 把 client bundle 包成 __ModuleLoader__ 格式
 ├── src/                      # Host 侧
 │   ├── index.ts              # apply()：store 初始化 + 路由 + 工具注册
-│   ├── activation.ts         # 按会话激活工具（ICPC_TOOL_NAMES + /icpc-workbench/activate）
+│   ├── activation.ts         # 按会话激活工具（ICPC_TOOL_NAMES + /algorithm-tools/activate）
 │   ├── dsh-compat.ts         # Context / Tool / Fs / Config 兼容层
 │   ├── types.ts
-│   ├── workbench-overview.ts # GET /icpc-workbench/overview（日历视图）
-│   ├── workbench-contests.ts # GET /icpc-workbench/contests（赛事视图）
-│   ├── workbench-sync.ts     # POST /icpc-workbench/sync（面板自动同步）
+│   ├── workbench-overview.ts # GET /algorithm-tools/overview（日历视图）
+│   ├── workbench-contests.ts # GET /algorithm-tools/contests（赛事视图）
+│   ├── workbench-sync.ts     # POST /algorithm-tools/sync（面板自动同步）
 │   ├── store/
 │   │   ├── schema.ts         # JSON 数据模型（含 SubmissionRecord.handle）
 │   │   └── index.ts          # IcpcStore：内存索引 + 防抖落盘
@@ -239,7 +239,7 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 
 | 现象 | 原因 / 处理 |
 |---|---|
-| 调用报 `unknown tool "icpc_*"` | 该会话还没激活：打开一次右侧面板（或 POST `/icpc-workbench/activate` 带 `sessionId`） |
+| 调用报 `unknown tool "icpc_*"` | 该会话还没激活：打开一次右侧面板（或 POST `/algorithm-tools/activate` 带 `sessionId`） |
 | 面板点开全白 | 客户端组件渲染时抛错。用 `renderToStaticMarkup(<WorkbenchPanel />)` 跑一遍能直接看到异常（历史上就踩过残留 prop 导致的 `xxx is not defined`） |
 | 控制台 `Unexpected end of JSON input` | 某个接口返回 404 空响应。面板已用 `readJson` 兜底：空 body / 非 JSON 返回 `null`，不再拖垮整个面板 |
 | 数据改了又被改回去 | 运行中的进程用内存覆盖磁盘。清数据走 `icpc_maintenance`，或退出 App 后再改文件 |
@@ -267,8 +267,8 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 ```
 
 - Host 侧 `inject = ['tools', 'agents', 'webServer']`：工具注册、按会话激活、面板数据路由
-- Client 侧注册一个 tab（`dsh-algo-trainer.workbench`）、会话头部按钮（`Algorithm Practice Space`）、设置页条目（算法训练台）
-- 装了 `dsh-better-sidebar` 时走 `ctx.betterSidebar`（tab id `dsh-algo-trainer:workbench`），否则回退 DSH 原生右侧栏
+- Client 侧注册一个 tab（`algorithm-tools.workbench`）、会话头部按钮（`Algorithm Practice Space`）、设置页条目（算法训练台）
+- 装了 `dsh-better-sidebar` 时走 `ctx.betterSidebar`（tab id `algorithm-tools:workbench`），否则回退 DSH 原生右侧栏
 
 ---
 
