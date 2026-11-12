@@ -142,7 +142,7 @@ export function WorkbenchPanel({
         </div>
         <div>
           <h2>Algorithm Practice Space</h2>
-          <p>训练工作台 · v0.1.5</p>
+          <p>训练工作台 · v0.1.6</p>
         </div>
       </header>
 
@@ -150,7 +150,6 @@ export function WorkbenchPanel({
         overview={overview}
         stats={stats}
         contests={contests}
-        plan={plan}
         error={vizError}
         onExtraTraining={() => void runFeature(WORKBENCH_FEATURES.find((f) => f.id === 'extra')!)}
       />
