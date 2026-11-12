@@ -96,10 +96,6 @@ export class IcpcStore {
         if (!this.state.settings.accounts) this.state.settings.accounts = {}
         if (!this.state.trainingIndex) this.state.trainingIndex = {}
         if (!this.state.bankSyncedAt) this.state.bankSyncedAt = null
-        // 0.1.7 起移除训练计划体系：丢掉旧字段，避免它一直被写回磁盘
-        if ('plans' in (this.state as unknown as Record<string, unknown>)) {
-          delete (this.state as unknown as Record<string, unknown>).plans
-        }
         // 迁移：旧版本写入的提交没有 handle，补成当前绑定的账号，
         // 这样以后换号时它们会自动被过滤掉，而不是混进新账号的统计
         for (const s of this.state.submissions) {
@@ -413,11 +409,12 @@ export class IcpcStore {
   /** 清空提交记录（换号/清理历史用）。内存和磁盘一起更新，避免被运行中的进程写回。 */
   clearSubmissions(options: { includeReviews?: boolean } = {}): { submissions: number; reviews: number } {
     const removedSubs = this.state.submissions.length
-    const removedReviews = options.includeReviews ? this.state.reviews.length : 0
+    const legacy = this.state as unknown as { reviews?: unknown[] }
+    const removedReviews = options.includeReviews ? (legacy.reviews?.length ?? 0) : 0
     this.state.submissions = []
     this.subIndex = new Map()
     this.sortedSubs = null
-    if (options.includeReviews) this.state.reviews = []
+    if (options.includeReviews) legacy.reviews = []
     this.rebuildSubIndex()
     this.scheduleSave()
     return { submissions: removedSubs, reviews: removedReviews }
@@ -513,6 +510,39 @@ export class IcpcStore {
       for (const tag of filterNoiseTags(p.tags ?? [])) tags.add(tag)
     }
     return [...tags].sort()
+  }
+
+  setTrainingIndex(date: string, keys: string[]): void {
+    this.state.trainingIndex[date] = [...new Set(keys)]
+    this.scheduleSave()
+  }
+
+  getTrainingIndex(date: string): string[] {
+    return this.state.trainingIndex[date] ?? []
+  }
+
+  setBankSyncedAt(iso: string): void {
+    this.state.bankSyncedAt = iso
+    this.scheduleSave()
+  }
+
+  getBankSyncedAt(): string | null {
+    return this.state.bankSyncedAt ?? null
+  }
+
+  /** 月视图：按提交记录统计每天的提交数与 AC 数（计划任务已下线） */
+  getMonthView(month: string): Array<{ date: string; total: number; checked: number }> {
+    const byDate = new Map<string, { total: number; checked: number }>()
+    for (const row of this.getSubmissionRows({ from: `${month}-01`, to: `${month}-31T23:59:59Z` })) {
+      const date = row.submittedAt.slice(0, 10)
+      const cur = byDate.get(date) ?? { total: 0, checked: 0 }
+      cur.total++
+      if (row.verdict === 'AC') cur.checked++
+      byDate.set(date, cur)
+    }
+    return [...byDate.entries()]
+      .map(([date, v]) => ({ date, ...v }))
+      .sort((a, b) => a.date.localeCompare(b.date))
   }
 
 }

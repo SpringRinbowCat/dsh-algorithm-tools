@@ -1,10 +1,9 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { IcpcStore } from '../src/store/index.ts'
-import type { FsService } from '../src/store/index.ts'
 
 /** 内存文件系统：测试里不需要真的写盘 */
-function memFs(initial: Record<string, string> = {}): FsService {
+function memFs(initial: Record<string, string> = {}) {
   const files = new Map(Object.entries(initial))
   return {
     exists: async (p: string) => files.has(p),
@@ -17,7 +16,7 @@ function memFs(initial: Record<string, string> = {}): FsService {
         files.delete(a)
       }
     },
-  } as FsService
+  }
 }
 
 const STATE = '/data/icpc-state.json'
@@ -36,7 +35,7 @@ async function makeStore(handle: string | undefined, submissions: unknown[] = []
     bankSyncedAt: null,
     settings: { accounts: handle ? { codeforces: { platform: 'codeforces', handle, lastSyncAt: null, enabled: true } } : {} },
   }
-  const store = new IcpcStore(memFs({ [STATE]: JSON.stringify(state) }), '/data')
+  const store = new IcpcStore(memFs({ [STATE]: JSON.stringify(state) }) as never, '/data')
   await store.awaitReady()
   return store
 }

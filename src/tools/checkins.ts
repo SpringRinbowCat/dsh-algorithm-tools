@@ -9,16 +9,14 @@ export function registerCheckinTool(host: IcpcHost, ctx: Context): () => void {
     name: 'icpc_checkin',
     description:
       '今日训练完成度与日历打卡。action=status 今天是否完成（含补题/加训建议）；' +
-      'action=streak 连续打卡（以「当天有 AC」为准）；action=month 月视图；action=date 某天任务；' +
-      'action=checkin / action=uncheck 勾选/取消计划任务。',
+      'action=streak 连续打卡（以「当天有 AC」为准）；action=month 月视图；action=date 某天摘要。',
     parameters: {
       action: {
         type: 'string', required: true,
-        enum: ['status', 'streak', 'month', 'date', 'checkin', 'uncheck'],
+        enum: ['status', 'streak', 'month', 'date'],
       },
       month: { type: 'string', description: '月份 YYYY-MM（month）' },
       date: { type: 'string', description: '日期 YYYY-MM-DD（date）' },
-      taskId: { type: 'number', description: '任务 ID（checkin/uncheck）' },
     },
     output: { schema: ANY_OUTPUT, render: (_a, v) => textOutput(v) },
     async execute(args) {
@@ -47,22 +45,6 @@ export function registerCheckinTool(host: IcpcHost, ctx: Context): () => void {
           if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
             return { ok: false, error: 'date 格式需为 YYYY-MM-DD' }
           return { ok: true, message: '该日期的训练与提交记录见 icpc_stats', date }
-        }
-
-        case 'checkin': {
-          const taskId = Number(args.taskId)
-          if (!Number.isInteger(taskId)) return { ok: false, error: 'taskId 必填' }
-          const found = store.findTask(taskId)
-          if (!found) return { ok: false, error: '任务不存在' }
-          store.toggleCheckin(taskId, true)
-          return { ok: true, status: buildTodayStatus(store, todayStr) }
-        }
-
-        case 'uncheck': {
-          const taskId = Number(args.taskId)
-          if (!Number.isInteger(taskId)) return { ok: false, error: 'taskId 必填' }
-          store.toggleCheckin(taskId, false)
-          return { ok: true }
         }
 
         default:

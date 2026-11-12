@@ -212,8 +212,10 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
         tagScores.set(i.tag, (tagScores.get(i.tag) ?? 0) + 0.5 * (i.gap / maxGap))
       }
 
-      const focus = store.currentFocus(todayStr)
-      const focusTags = focus?.tags ?? []
+      // 计划体系已下线：不再有「本周方向」，选题只看弱项与近期比赛
+      type FocusShape = { week: number; direction: string; tags: string[] }
+      const focus = null as FocusShape | null
+      const focusTags: string[] = []
 
       const reasonOf = (p: { problemKey: string; difficulty: number | null; tags: string[] }): string => {
         const bits: string[] = []
@@ -221,8 +223,6 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
         if (hitWeak.length) bits.push(`命中弱项 ${hitWeak.slice(0, 3).join('/')}`)
         const hitReplay = p.tags.filter((t) => (replayScores.get(t) ?? 0) > 0)
         if (hitReplay.length) bits.push(`近期比赛在 ${hitReplay.slice(0, 2).join('/')} 上失分`)
-        const hitFocus = p.tags.filter((t) => focusTags.includes(t))
-        if (hitFocus.length) bits.push(`贴合本周方向 ${focus?.direction ?? ''}`.trim())
         if (p.difficulty != null) {
           const band = bandForDifficulty(level, p.difficulty)
           const center = ranges[band].center

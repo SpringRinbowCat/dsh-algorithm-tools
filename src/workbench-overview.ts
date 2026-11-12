@@ -3,7 +3,7 @@
  * 只读，不写盘。
  */
 
-import type { IcpcStore } from '../store/index.ts'
+import type { IcpcStore } from './store/index.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { computeOverall } from './analysis/stats.ts'
 import { computeWeakness } from './analysis/weakness.ts'
