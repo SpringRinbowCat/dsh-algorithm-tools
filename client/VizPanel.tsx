@@ -53,16 +53,7 @@ export interface ContestItem {
   url: string
 }
 
-export interface PlanSnapshot {
-  plan: { id: number; title: string; goal: string; startDate: string; endDate: string } | null
-  currentWeek: { index: number; direction: string; tags: string[] } | null
-  weeks: Array<{ index: number; startDate: string; direction: string; tags: string[]; total: number; checked: number; done: boolean }>
-  today: { total: number; checked: number } | null
-  progress: { checked: number; total: number } | null
-  daysLeft: number | null
-}
-
-const VIEWS = ['日历', '数据概览', '赛事', '计划'] as const
+const VIEWS = ['日历', '数据概览', '赛事'] as const
 
 function levelOf(cell: DayCell): 0 | 1 | 2 | 3 {
   if (cell.done && cell.tasks > 0) return 3
@@ -83,13 +74,12 @@ export interface VizPanelProps {
   overview: Overview | null
   stats: Stats | null
   contests: ContestItem[] | null
-  plan: PlanSnapshot | null
   error?: string | null
   /** 今日训练完成时显示的「加训」按钮；不传则不显示 */
   onExtraTraining?: () => void
 }
 
-export function VizPanel({ overview, stats, contests, plan, error = null, onExtraTraining }: VizPanelProps): ReactNode {
+export function VizPanel({ overview, stats, contests, error = null, onExtraTraining }: VizPanelProps): ReactNode {
   const [view, setView] = useState(0)
 
   return (
@@ -128,47 +118,7 @@ export function VizPanel({ overview, stats, contests, plan, error = null, onExtr
       {view === 0 && overview ? <CalendarView data={overview} onExtraTraining={onExtraTraining} /> : null}
       {view === 1 && stats ? <StatsView data={stats} /> : null}
       {view === 2 ? <ContestsView data={contests} /> : null}
-      {view === 3 ? <PlanView data={plan} /> : null}
     </section>
-  )
-}
-
-function PlanView({ data }: { data: PlanSnapshot | null }): ReactNode {
-  if (!data) return <div className="icpc-viz__loading">加载计划…</div>
-  if (!data.plan) {
-    return <div className="icpc-viz__muted">还没有训练计划：点「训练计划」生成一份（每周一个方向）</div>
-  }
-  const p = data.plan
-  const pct = data.progress && data.progress.total > 0
-    ? Math.round((data.progress.checked / data.progress.total) * 100)
-    : 0
-  return (
-    <>
-      <div className="icpc-viz__state">{p.title}</div>
-      <div className="icpc-viz__meta">
-        {p.startDate} → {p.endDate} · 剩余 {data.daysLeft ?? 0} 天 · 今日任务 {data.today?.checked ?? 0}/{data.today?.total ?? 0}
-      </div>
-
-      <div className="icpc-viz__focus">
-        {data.currentWeek
-          ? <>本周方向：<b>{data.currentWeek.direction}</b></>
-          : '本周方向：未设置（旧计划没有周方向）'}
-      </div>
-
-      <div className="icpc-viz__pbar"><b style={{ width: `${pct}%` }} /></div>
-      <div className="icpc-viz__legend">
-        <span>计划进度 {data.progress?.checked ?? 0}/{data.progress?.total ?? 0}</span>
-        <span className="icpc-viz__total">{pct}%</span>
-      </div>
-
-      <div className="icpc-viz__weeks">
-        {data.weeks.map((w) => (
-          <span key={w.index} className={`icpc-viz__weekchip${w.done ? ' is-done' : ''}`} title={`第 ${w.index} 周 · ${w.direction}`}>
-            W{w.index} {w.checked}/{w.total}
-          </span>
-        ))}
-      </div>
-    </>
   )
 }
 
@@ -474,12 +424,5 @@ const CSS = `
 .icpc-viz__cname { color: var(--dsw-alias-label-primary); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .icpc-viz__cname:hover { text-decoration: underline; }
 .icpc-viz__ctime { color: var(--dsw-alias-label-caption); white-space: nowrap; }
-.icpc-viz__focus { margin-top: 10px; font-size: 12px; color: var(--dsw-alias-label-secondary); }
-.icpc-viz__focus b { color: var(--dsw-alias-label-primary); }
-.icpc-viz__pbar { height: 8px; margin-top: 8px; border-radius: 4px; background: var(--dsw-alias-interactive-bg-hover); overflow: hidden; }
-.icpc-viz__pbar b { display: block; height: 100%; background: #4ade80; }
-.icpc-viz__weeks { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
-.icpc-viz__weekchip { font-size: 10px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--dsw-alias-border-l4); color: var(--dsw-alias-label-secondary); }
-.icpc-viz__weekchip.is-done { color: #15803d; border-color: #86efac; }
 .icpc-viz__loading, .icpc-viz__error { padding: 10px 4px; font-size: 12px; color: var(--dsw-alias-label-caption); }
 `

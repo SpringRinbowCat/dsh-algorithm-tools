@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { activateWorkbench } from './api.ts'
-import { VizPanel, type ContestItem, type Overview, type PlanSnapshot, type Stats } from './VizPanel.tsx'
+import { VizPanel, type ContestItem, type Overview, type Stats } from './VizPanel.tsx'
 import {
   FEATURE_GROUPS,
   WORKBENCH_FEATURES,
@@ -29,7 +29,6 @@ export function WorkbenchPanel({
   const [stats, setStats] = useState<Stats | null>(null)
   const [vizError, setVizError] = useState<string | null>(null)
   const [contests, setContests] = useState<ContestItem[] | null>(null)
-  const [plan, setPlan] = useState<PlanSnapshot | null>(null)
   const lastKickRef = useRef(0)
   const loadRef = useRef<() => void>(() => {})
 
@@ -40,9 +39,8 @@ export function WorkbenchPanel({
         fetch('/icpc-workbench/overview?days=84').then((r) => r.json()),
         fetch('/icpc-workbench/stats').then((r) => r.json()),
         fetch('/icpc-workbench/contests').then((r) => r.json()),
-        fetch('/icpc-workbench/plan').then((r) => r.json()),
       ])
-        .then(([o, s, c, pl]: Array<{ ok?: boolean; error?: string } & Record<string, unknown>>) => {
+        .then(([o, s, c]: Array<{ ok?: boolean; error?: string } & Record<string, unknown>>) => {
           if (!alive) return
           if (o?.ok) {
             setOverview(o as unknown as Overview)
@@ -62,9 +60,6 @@ export function WorkbenchPanel({
           if (s?.ok) setStats((s as unknown as { stats: Stats }).stats)
           if (Array.isArray((c as unknown as { contests?: ContestItem[] })?.contests)) {
             setContests((c as unknown as { contests: ContestItem[] }).contests)
-          }
-          if ((pl as unknown as { ok?: boolean })?.ok) {
-            setPlan((pl as unknown as { plan: PlanSnapshot }).plan)
           }
         })
         .catch((e: unknown) => {
@@ -133,7 +128,7 @@ export function WorkbenchPanel({
         </div>
         <div>
           <h2>Algorithm Practice Space</h2>
-          <p>训练工作台 · v0.1.3</p>
+          <p>训练工作台 · v0.1.4</p>
         </div>
       </header>
 
@@ -225,8 +220,6 @@ function Icon({ name, size = 16 }: { name: FeatureIcon | 'trophy'; size?: number
   switch (name) {
     case 'today':
       return <svg {...common}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 4V2M20 12h2M12 20v2M4 12H2" /></svg>
-    case 'plans':
-      return <svg {...common}><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
     case 'reviews':
       return <svg {...common}><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 12a8 8 0 0 1 13.7-5.6L20 8.5" /><path d="M4 20v-4.5h4.5M20 4v4.5h-4.5" /></svg>
     case 'problems':

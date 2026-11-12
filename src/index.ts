@@ -23,7 +23,6 @@ import { registerOverviewRoute } from './workbench-overview.ts'
 import { registerSyncRoute } from './workbench-sync.ts'
 import { registerContestsRoute } from './workbench-contests.ts'
 import { defaultLocalRoots } from './util/local-scan.ts'
-import { registerPlanRoute } from './workbench-plan.ts'
 
 export const name = 'dsh-algorithm-tools'
 export const inject = ['tools', 'agents', 'webServer']
@@ -110,5 +109,4 @@ export function apply(ctx: Context, rawConfig: Partial<PluginConfig> = {}): void
   })
   registerSyncRoute(ctx, host)
   registerContestsRoute(ctx, host)
-  registerPlanRoute(ctx, store)
 }

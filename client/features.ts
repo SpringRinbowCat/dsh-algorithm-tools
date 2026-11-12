@@ -1,7 +1,6 @@
 export type FeatureGroup = 'training'
 export type FeatureIcon =
   | 'today'
-  | 'plans'
   | 'reviews'
   | 'problems'
   | 'sync'
@@ -29,14 +28,6 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     description: '巩固、同段与挑战题',
     icon: 'today',
     prompt: '获取远端今日训练题目，如远端无题目文档，调用 icpc_today 获取训练并同步至日历，将文档推送到远端',
-  },
-  {
-    id: 'plans',
-    group: 'training',
-    label: '训练计划',
-    description: '查看、生成与打卡',
-    icon: 'plans',
-    prompt: '从远端 taskList 目录列出我的训练计划；如果没有计划，调用 icpc_generate_plan 以 14 天为周期生成一个系统化训练计划（生成后用 icpc_manage_plan 确认并同步到远端）。',
   },
   {
     id: 'sync',

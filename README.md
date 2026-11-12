@@ -115,7 +115,7 @@ dsh-algorithm-tools/
 │   │   ├── planService.ts    # 计划 JSON 解析与日期工具
 │   │   ├── weekly.ts         # 每周固定方向的训练计划生成
 │   │   └── taskList.ts       # taskList Markdown 读写
-│   ├── tools/                # 11 个 agent 工具
+│   ├── tools/                # 12 个 agent 工具
 │   │   ├── helpers.ts        # textOutput / num / str 辅助
 │   │   ├── sync.ts           # icpc_sync — 同步刷题记录
 │   │   ├── sync-all.ts       # icpc_sync_all — 同步并提交本地仓库
@@ -127,10 +127,12 @@ dsh-algorithm-tools/
 │   │   ├── checkins.ts       # icpc_checkin — 日历打卡
 │   │   ├── settings.ts       # icpc_settings — 设置
 │   │   ├── problems.ts       # icpc_problems — 题目浏览
+│   │   ├── maintenance.ts    # icpc_maintenance — 数据维护（清空提交/复习）
 ├── client/
 │   └── index.ts              # Client 半边：设置页引导面板（Slot UI）
 └── tests/
-    └── analysis.test.ts      # 24 个纯函数测试
+    ├── analysis.test.ts      # 纯函数测试
+    └── account-filter.test.ts # 换号后的数据隔离测试
 ```
 
 ## 安装
@@ -176,6 +178,7 @@ AI 配置也可运行时通过 `icpc_settings` 工具修改（持久化到 JSON�
 | `icpc_review` | Rank 复盘：近期比赛与单场复盘 |
 | `icpc_contests` | 多平台赛事（CF+AtCoder 聚合） |
 | `icpc_checkin` | 日历打卡：streak/month/date/checkin/uncheck |
+| `icpc_maintenance` | 数据维护：stats / clear_submissions / clear_all |
 | `icpc_settings` | 设置：get/set_account/set_ai/set_adapter/set_cookies/set_reminder |
 | `icpc_problems` | 浏览/搜索题目库（platform/difficulty/tag/q/bank） |
 
