@@ -1,10 +1,10 @@
 {
   "name": "dsh-algorithm-tools",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "license": "MIT",
   "type": "module",
-  "description": "ICPC competitive programming training tools for DeepSeek Harness — sync, analysis, plans, reviews",
+  "description": "算法训练台（DeepSeek Harness 插件）：Codeforces/AtCoder 刷题同步、弱项分析、每日三档训练、Rank 复盘、赛事与打卡",
   "repository": {
     "type": "git",
     "url": "https://github.com/SpringRinbowCat/dsh-algorithm-tools.git"

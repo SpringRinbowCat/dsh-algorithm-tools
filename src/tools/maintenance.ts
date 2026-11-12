@@ -12,7 +12,7 @@ export function registerMaintenanceTool(host: IcpcHost, ctx: Context): () => voi
     name: 'icpc_maintenance',
     description:
       '数据维护。action=clear_submissions 清空全部提交记录（换号或清理历史时用）；' +
-      'action=clear_all 同时清空提交和复习库；action=stats 只查看当前数据量。',
+      'action=clear_all 同时清空提交和历史复习数据；action=stats 只查看当前数据量。',
     parameters: {
       action: {
         type: 'string',

@@ -1,5 +1,5 @@
 /**
- * 本地 Codeforces 目录扫描：把「我实际写过代码的题」收集出来，用于自动收进复习库。
+ * 本地 Codeforces 目录扫描：把「我实际写过代码的题」收集出来，用于补全题号与难度。
  *
  * 目录约定（来自用户现有工作流）：
  *   D:\codeforces\<YYYY-MM-DD>\<problemKey>\<problemKey>.cpp
