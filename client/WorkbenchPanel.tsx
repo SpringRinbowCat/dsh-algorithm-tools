@@ -19,6 +19,22 @@ export interface WorkbenchPanelProps {
   inputActions?: InputActions
 }
 
+/** 安全读 JSON：接口 404/空响应/非 JSON 都返回 null，不让单个接口拖垮整个面板 */
+async function readJson(url: string, init?: RequestInit): Promise<Record<string, any> | null> {
+  try {
+    const res = await fetch(url, init)
+    const text = await res.text()
+    if (!text) return null
+    try {
+      return JSON.parse(text) as Record<string, any>
+    } catch {
+      return null
+    }
+  } catch {
+    return null
+  }
+}
+
 export function WorkbenchPanel({
   sessionId,
   inputActions,
@@ -36,9 +52,9 @@ export function WorkbenchPanel({
     let alive = true
     const load = (): void => {
       Promise.all([
-        fetch('/icpc-workbench/overview?days=84').then((r) => r.json()),
-        fetch('/icpc-workbench/stats').then((r) => r.json()),
-        fetch('/icpc-workbench/contests').then((r) => r.json()),
+        readJson('/icpc-workbench/overview?days=84'),
+        readJson('/icpc-workbench/stats'),
+        readJson('/icpc-workbench/contests'),
       ])
         .then(([o, s, c]: Array<{ ok?: boolean; error?: string } & Record<string, unknown>>) => {
           if (!alive) return
@@ -49,8 +65,7 @@ export function WorkbenchPanel({
             const done = (o as unknown as Overview).today?.done === true
             if (done && Date.now() - lastKickRef.current > 10 * 60 * 1000) {
               lastKickRef.current = Date.now()
-              fetch('/icpc-workbench/sync?force=1', { method: 'POST' })
-                .then((r) => r.json())
+              readJson('/icpc-workbench/sync?force=1', { method: 'POST' })
                 .then(() => { if (alive) loadRef.current() })
                 .catch(() => {})
             }
@@ -69,9 +84,8 @@ export function WorkbenchPanel({
     loadRef.current = load
     load()
     // 打开训练台时自动增量同步（服务端 30 分钟内只拉一次），完成后刷新概览
-    fetch('/icpc-workbench/sync', { method: 'POST' })
-      .then((r) => r.json())
-      .then((res: { ok?: boolean; synced?: Array<{ skipped: boolean }> }) => {
+    readJson('/icpc-workbench/sync', { method: 'POST' })
+      .then((res: { ok?: boolean; synced?: Array<{ skipped: boolean }> } | null) => {
         if (!alive) return
         if (res?.ok && res.synced?.some((s) => !s.skipped)) load()
       })
@@ -128,7 +142,7 @@ export function WorkbenchPanel({
         </div>
         <div>
           <h2>Algorithm Practice Space</h2>
-          <p>训练工作台 · v0.1.4</p>
+          <p>训练工作台 · v0.1.5</p>
         </div>
       </header>
 
