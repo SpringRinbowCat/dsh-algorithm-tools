@@ -409,6 +409,19 @@ export class IcpcStore {
     return { imported, skipped }
   }
 
+  /** 清空提交记录（换号/清理历史用）。内存和磁盘一起更新，避免被运行中的进程写回。 */
+  clearSubmissions(options: { includeReviews?: boolean } = {}): { submissions: number; reviews: number } {
+    const removedSubs = this.state.submissions.length
+    const removedReviews = options.includeReviews ? this.state.reviews.length : 0
+    this.state.submissions = []
+    this.subIndex = new Map()
+    this.sortedSubs = null
+    if (options.includeReviews) this.state.reviews = []
+    this.rebuildSubIndex()
+    this.scheduleSave()
+    return { submissions: removedSubs, reviews: removedReviews }
+  }
+
   getKnownExternalIds(platform?: PlatformId): Set<string> {
     return new Set(
       this.state.submissions

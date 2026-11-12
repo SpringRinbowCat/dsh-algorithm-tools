@@ -11,6 +11,7 @@ import { registerContestTool } from './tools/contests.ts'
 import { registerCheckinTool } from './tools/checkins.ts'
 import { registerSettingsTool } from './tools/settings.ts'
 import { registerProblemTool } from './tools/problems.ts'
+import { registerMaintenanceTool } from './tools/maintenance.ts'
 
 export const ICPC_TOOL_NAMES = [
   'icpc_sync',
@@ -24,6 +25,7 @@ export const ICPC_TOOL_NAMES = [
   'icpc_checkin',
   'icpc_settings',
   'icpc_problems',
+  'icpc_maintenance',
 ] as const
 
 export function registerIcpcTools(host: IcpcHost, targetCtx: Context): () => void {
@@ -38,6 +40,7 @@ export function registerIcpcTools(host: IcpcHost, targetCtx: Context): () => voi
     registerCheckinTool(host, targetCtx),
     registerSettingsTool(host, targetCtx),
     registerProblemTool(host, targetCtx),
+    registerMaintenanceTool(host, targetCtx),
   ]
 
   return () => {
