@@ -128,12 +128,12 @@ function SettingsPanel(): unknown {
     ['icpc_sync_all', '同步提交并提交本地代码'],
     ['icpc_stats', '统计 / 弱项画像 / 趋势'],
     ['icpc_today', '今日三档训练推荐'],
-    ['icpc_generate_plan', '生成训练计划'],
-    ['icpc_manage_plan', '计划管理 / 打卡'],
     ['icpc_review', 'rank 复盘 / 复习'],
     ['icpc_contests', '赛事中心'],
     ['icpc_problems', '浏览 / 搜索题目库'],
     ['icpc_checkin', '今日完成度 / 日历打卡'],
+    ['icpc_settings', '账号 / 路径 / 提醒设置'],
+    ['icpc_maintenance', '数据维护：清空提交 / 复习'],
   ]
 
   return createElement(
