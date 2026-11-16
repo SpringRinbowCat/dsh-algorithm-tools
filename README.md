@@ -7,7 +7,7 @@
 - **10 个 `icpc_*` agent 工具** — 在对话里直接让 AI 帮你同步、选题、复盘
 - **右侧面板** — 日历 / 数据概览 / 赛事 三个视图，外加一键功能按钮
 
-当前版本 **0.1.6**。
+当前版本 **0.2.1**（npm 已发布）。
 
 ---
 
@@ -15,6 +15,8 @@
 
 ```bash
 # 1. 安装（会转发给 pnpm，在 profile 目录里执行）
+dsh plugin --profile desktop add dsh-algorithm-tools        # 从 npm 装（推荐）
+# 或跟随仓库最新提交：
 dsh plugin --profile desktop add github:SpringRinbowCat/dsh-algorithm-tools
 ```
 
@@ -210,7 +212,7 @@ dsh-algorithm-tools/
 │   ├── features.ts           # 功能目录（按钮 → 提示词）
 │   ├── betterSidebar.ts      # 有 better-sidebar 时的适配
 │   └── api.ts
-└── tests/                    # 37 个测试（5 个文件）
+└── tests/                    # 40 个测试（6 个文件）
 ```
 
 ---
@@ -234,6 +236,33 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 ```
 
 ---
+
+## 训练下限（0.2.1+）
+
+`icpc_today` 直接用 Codeforces 当前 rating 定档，但 **rating 低于 1200 时锁定 1200**：
+
+```
+能力值：1200（当前 rating 571，低于 1200 按 1200 训练）
+```
+
+避免新号或掉分后只出 600–900 的题。rating 到 1200 以上后自动按真实分数分档。
+
+## 版本记录
+
+| 版本 | 变更 |
+|---|---|
+| 0.2.1 | rating 低于 1200 锁定 1200；发布到 npm |
+| 0.2.0 | 内部标识符统一为 `algorithm-tools`（路由 / CSS / tab id） |
+| 0.1.7 | 移除训练计划体系（计划视图、计划按钮、`taskList`、`icpc_generate_plan`/`icpc_manage_plan`）；移除模板库、复习库残留 |
+| 0.1.3 | 提交记录带 `handle`，换号后按当前账号隔离统计 |
+
+## 发布（维护者）
+
+```bash
+pnpm build && pnpm test                      # 或直接依赖 prepublishOnly
+npm --cache /tmp/npm-cache publish            # 走浏览器 2FA；本机 ~/.npm 有 root 文件，需换 cache
+dsh plugin --profile desktop add dsh-algorithm-tools@<新版本>
+```
 
 ## 排错
 
@@ -278,4 +307,4 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 pnpm test
 ```
 
-37 个用例，覆盖：纯函数分析（难度分档、弱项打分、趋势、Markdown 渲染）、工具按会话注册、客户端功能目录、better-sidebar 描述符、换号后的数据隔离。
+40 个用例，覆盖：纯函数分析（难度分档、弱项打分、趋势、Markdown 渲染）、rating 训练下限、工具按会话注册、客户端功能目录、better-sidebar 描述符、换号后的数据隔离、旧字段清理。
