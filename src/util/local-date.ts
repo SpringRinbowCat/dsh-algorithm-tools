@@ -14,3 +14,22 @@ export function addDaysLocal(base: string, n: number): string {
   d.setDate(d.getDate() + n)
   return localDay(d)
 }
+
+/** 周日休息日：按本地日历日期判断 */
+export function isSunday(dateStr: string): boolean {
+  return new Date(`${dateStr}T00:00:00`).getDay() === 0
+}
+
+/** 上一个非周日（跳过周日） */
+export function prevNonSunday(dateStr: string): string {
+  let d = addDaysLocal(dateStr, -1)
+  while (isSunday(d)) d = addDaysLocal(d, -1)
+  return d
+}
+
+/** 下一个非周日（跳过周日） */
+export function nextNonSunday(dateStr: string): string {
+  let d = addDaysLocal(dateStr, 1)
+  while (isSunday(d)) d = addDaysLocal(d, 1)
+  return d
+}

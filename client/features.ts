@@ -57,10 +57,10 @@ export const WORKBENCH_FEATURES: readonly WorkbenchFeature[] = [
     id: 'extra',
     group: 'training',
     label: '加训',
-    description: '今日训练完成，再换一批挑战题',
+    description: '今日训练完成（或周日休息日），再换一批加练题',
     icon: 'today',
     hidden: true,
-    prompt: '今天的三档训练已经完成，请调用 icpc_today（带 rotate 换一批）给我 1-2 道挑战区的加练题，并说明选题理由。',
+    prompt: '请调用 icpc_today（extra=true，带 rotate 换一批）给我 1-2 道加练题，并说明选题理由；如果今天是周日，也照此加训。',
   },
 ]
 

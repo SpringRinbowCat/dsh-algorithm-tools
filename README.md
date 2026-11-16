@@ -7,7 +7,7 @@
 - **10 个 `icpc_*` agent 工具** — 在对话里直接让 AI 帮你同步、选题、复盘
 - **右侧面板** — 日历 / 数据概览 / 赛事 三个视图，外加一键功能按钮
 
-当前版本 **0.2.1**（npm 已发布）。
+当前版本 **0.2.2**。
 
 ---
 
@@ -39,7 +39,7 @@ icpc_today                                   # 生成今天的训练
 
 | 视图 | 内容 |
 |---|---|
-| **日历** | 近 12 周训练热力图、连续打卡、今日训练进度 |
+| **日历** | 近 12 周训练热力图、连续打卡（跳过周日）、今日训练进度 |
 | **数据概览** | 提交/AC 统计、难度分布、标签分布、12 周趋势、弱项 |
 | **赛事** | CF + AtCoder 近期比赛（进行中 / 即将开始） |
 
@@ -51,7 +51,7 @@ icpc_today                                   # 生成今天的训练
 | 同步数据 | `icpc_sync_all`：同步提交 + 提交并推送本地仓库 |
 | 题库刷新 | `icpc_sync bank=true`：只拉题库，不动代码 |
 | rank 复盘 | `icpc_review action=contests`：近期比赛复盘 |
-| 加训 | 今日完成后出现，换一批挑战题 |
+| 加训 | 今日完成后出现；周日休息日也可加训 |
 
 **打开面板时会自动增量同步**（服务端 30 分钟内只拉一次）；今日训练完成后会额外拉一次最新数据。
 
@@ -64,7 +64,7 @@ icpc_today                                   # 生成今天的训练
 | `icpc_sync` | `platform`(all/codeforces/atcoder)、`handle`、`bank` | 增量同步提交；`bank=true` 顺带刷题库 |
 | `icpc_sync_all` | `contestId` | 同步 + 处理 `rank/_pending` + 提交推送仓库 |
 | `icpc_stats` | `type`(overall/weakness/trend) | 统计分析 |
-| `icpc_today` | `consolidation`/`core`/`challenge`/`rotate`/`windowDays` | 今日三档训练，写入 `<日期>.md` |
+| `icpc_today` | `consolidation`/`core`/`challenge`/`rotate`/`windowDays`/`extra` | 今日三档训练；周日默认休息，`extra=true` 可加训 |
 | `icpc_review` | `contests` / `contest` | Rank 复盘 |
 | `icpc_contests` | `action`(upcoming/finished) | 赛事列表 |
 | `icpc_checkin` | `status/streak/month/date/checkin/uncheck` | 日历打卡 |
@@ -247,10 +247,18 @@ dsh plugin --profile desktop add file:/path/to/dsh-algorithm-tools
 
 避免新号或掉分后只出 600–900 的题。rating 到 1200 以上后自动按真实分数分档。
 
+## 周日休息（0.2.2+）
+
+- 周日不生成每日训练题，`icpc_today` 默认返回休息日
+- `buildTodayStatus` 默认 `done = true`，日历显示「周日休息日」
+- 本月打卡和连续打卡都跳过周日；周日当天加训的 AC 不计入打卡
+- 想加练时点「加训」（或调用 `icpc_today extra=true`），仍可生成加练题
+
 ## 版本记录
 
 | 版本 | 变更 |
 |---|---|
+| 0.2.2 | 周日休息日、打卡/连续跳过周日、周日可加训 |
 | 0.2.1 | rating 低于 1200 锁定 1200；发布到 npm |
 | 0.2.0 | 内部标识符统一为 `algorithm-tools`（路由 / CSS / tab id） |
 | 0.1.7 | 移除训练计划体系（计划视图、计划按钮、`taskList`、`icpc_generate_plan`/`icpc_manage_plan`）；移除模板库、复习库残留 |

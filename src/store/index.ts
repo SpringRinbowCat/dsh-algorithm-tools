@@ -15,6 +15,7 @@ import { defaultState } from './schema.ts'
 // 难度分桶统一由 analysis/stats 提供，避免重复定义
 import { bucketForDifficulty } from '../analysis/stats.ts'
 import { filterNoiseTags } from '../analysis/tags.ts'
+import { localDay, isSunday } from '../util/local-date.ts'
 
 export { bucketForDifficulty }
 
@@ -546,7 +547,9 @@ export class IcpcStore {
   getMonthView(month: string): Array<{ date: string; total: number; checked: number }> {
     const byDate = new Map<string, { total: number; checked: number }>()
     for (const row of this.getSubmissionRows({ from: `${month}-01`, to: `${month}-31T23:59:59Z` })) {
-      const date = row.submittedAt.slice(0, 10)
+      const date = localDay(row.submittedAt)
+      // 周日休息日：不计入月打卡
+      if (isSunday(date)) continue
       const cur = byDate.get(date) ?? { total: 0, checked: 0 }
       cur.total++
       if (row.verdict === 'AC') cur.checked++

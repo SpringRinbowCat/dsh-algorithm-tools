@@ -7,7 +7,7 @@ import type { IcpcStore } from './store/index.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { computeOverall } from './analysis/stats.ts'
 import { computeWeakness } from './analysis/weakness.ts'
-import { localDay, addDaysLocal } from './util/local-date.ts'
+import { localDay, addDaysLocal, isSunday, prevNonSunday, nextNonSunday } from './util/local-date.ts'
 
 export interface DayCell {
   date: string
@@ -16,6 +16,8 @@ export interface DayCell {
   trainingTotal: number
   trainingDone: number
   done: boolean
+  /** 周日休息日：默认算完成，不计入打卡 */
+  restDay: boolean
 }
 
 export interface TodayStatus {
@@ -31,6 +33,8 @@ export interface TodayStatus {
     remaining: Array<{ problemKey: string; url: string | null }>
   }
   done: boolean
+  /** 周日休息日：默认显示已完成，可自由加训 */
+  restDay: boolean
   advice: { kind: 'catchup' | 'extra'; title: string; items: string[] }
 }
 
@@ -61,21 +65,50 @@ export function buildDayCells(store: IcpcStore, days: number, todayStr: string):
     const acSet = activity?.ac ?? new Set<string>()
     const index = store.getTrainingIndex(date)
     const trainingDone = index.filter((k) => acSet.has(k)).length
+    const restDay = isSunday(date)
     cells.push({
       date,
       ac: acSet.size,
       submissions: activity?.submissions ?? 0,
-      trainingTotal: index.length,
-      trainingDone,
-      // 有训练索引 → 以索引里的题全部 AC 为准；没有索引（历史数据）→ 回退为「当天有 AC」
-      done: index.length > 0 ? trainingDone === index.length : acSet.size > 0,
+      trainingTotal: restDay ? 0 : index.length,
+      trainingDone: restDay ? 0 : trainingDone,
+      // 周日休息日：默认算完成，不计入打卡
+      done: restDay ? true : (index.length > 0 ? trainingDone === index.length : acSet.size > 0),
+      restDay,
     })
   }
   return cells
 }
 
+/** 热力图：按周对齐，每周只保留周一到周六；周日整行移除 */
+export function buildHeatmapCells(store: IcpcStore, weeks: number, todayStr: string): DayCell[] {
+  const today = new Date(`${todayStr}T00:00:00`)
+  const dow = today.getDay() // 0=周日
+  const monday = addDaysLocal(todayStr, dow === 0 ? -6 : 1 - dow)
+  const saturday = addDaysLocal(monday, 5)
+  return buildDayCells(store, weeks * 7, saturday).filter((c) => !c.restDay)
+}
+
 export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatus {
   const cell = buildDayCells(store, 1, todayStr)[0]
+
+  // 周日休息日：不要求训练，默认显示已完成；当天有 AC 算加训，但不计入打卡
+  if (isSunday(todayStr)) {
+    return {
+      date: todayStr,
+      ac: cell.ac,
+      training: { total: 0, completed: 0, started: false, done: true, remaining: [] },
+      done: true,
+      restDay: true,
+      advice: {
+        kind: 'extra',
+        title: '周日休息日',
+        items: [cell.ac > 0
+          ? `今天已加训 ${cell.ac} 题（周日不计入打卡）`
+          : '今天不安排训练，可自由休息或加训'],
+      },
+    }
+  }
 
   const acKeys = store.getAcKeys()
   const index = store.getTrainingIndex(todayStr)
@@ -117,6 +150,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
       ac: cell.ac,
       training: { ...training, remaining: left },
       done: false,
+      restDay: false,
       advice: {
         kind: 'catchup',
         title: index.length === 0
@@ -132,6 +166,7 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
     ac: cell.ac,
     training: { ...training, remaining: [] },
     done: true,
+    restDay: false,
     advice: {
       kind: 'extra',
       title: '今日训练完成',
@@ -140,30 +175,39 @@ export function buildTodayStatus(store: IcpcStore, todayStr: string): TodayStatu
   }
 }
 
-/** 连续打卡：以「当天有 AC」为准，而不是手动勾选 */
+/** 连续打卡：以「当天有 AC」为准，而不是手动勾选；跳过周日 */
+export function acStreakFromDays(days: Iterable<string>, todayStr: string): { current: number; longest: number; totalDays: number } {
+  const set = new Set<string>()
+  for (const d of days) {
+    if (!isSunday(d)) set.add(d)
+  }
+  if (set.size === 0) return { current: 0, longest: 0, totalDays: 0 }
+
+  const sorted = [...set].sort()
+  let longest = 1
+  let run = 1
+  for (let i = 1; i < sorted.length; i++) {
+    run = sorted[i] === nextNonSunday(sorted[i - 1]) ? run + 1 : 1
+    if (run > longest) longest = run
+  }
+
+  // 今天如果是周日，从周六开始往回数；如果今天还没 AC，也跳过周日从上一个非周日开始
+  let cursor = !isSunday(todayStr) && set.has(todayStr) ? todayStr : prevNonSunday(todayStr)
+  let current = 0
+  while (set.has(cursor)) {
+    current++
+    cursor = prevNonSunday(cursor)
+  }
+  return { current, longest, totalDays: set.size }
+}
+
+/** 连续打卡：以「当天有 AC」为准，而不是手动勾选；周日跳过 */
 export function acStreak(store: IcpcStore, todayStr: string): { current: number; longest: number; totalDays: number } {
   const days = new Set<string>()
   for (const s of store.getSubmissionRows()) {
     if (s.verdict === 'AC') days.add(dayKey(s.submittedAt))
   }
-  if (days.size === 0) return { current: 0, longest: 0, totalDays: 0 }
-  const toNum = (d: string): number => Math.floor(new Date(`${d}T00:00:00Z`).getTime() / 86_400_000)
-  const nums = [...days].map(toNum).sort((a, b) => a - b)
-  let longest = 1
-  let run = 1
-  for (let i = 1; i < nums.length; i++) {
-    run = nums[i] - nums[i - 1] === 1 ? run + 1 : 1
-    if (run > longest) longest = run
-  }
-  const set = new Set(nums)
-  const today = toNum(todayStr)
-  let cursor = set.has(today) ? today : today - 1
-  let current = 0
-  while (set.has(cursor)) {
-    current++
-    cursor--
-  }
-  return { current, longest, totalDays: days.size }
+  return acStreakFromDays(days, todayStr)
 }
 
 export interface StatsSnapshot {
@@ -241,12 +285,13 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
         try {
           const url = new URL(req.url ?? '/', 'http://localhost')
           const days = Math.min(371, Math.max(7, Number(url.searchParams.get('days') ?? 84) || 84))
+          const weeks = Math.min(53, Math.max(1, Math.round(days / 7)))
           const todayStr = localDay()
           sendJson(res, 200, {
             ok: true,
             today: buildTodayStatus(store, todayStr),
             streak: acStreak(store, todayStr),
-            days: buildDayCells(store, days, todayStr),
+            days: buildHeatmapCells(store, weeks, todayStr),
           })
         } catch (e) {
           sendJson(res, 500, { ok: false, error: (e as Error).message })

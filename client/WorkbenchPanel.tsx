@@ -102,7 +102,7 @@ export function WorkbenchPanel({
 
   // 红点 = 今天还没抽过今日训练（没有训练索引），点过「今日训练」就消失
   const trainingStarted = (overview?.today.training.total ?? 0) > 0
-  const showTodayDot = overview !== null && !trainingStarted
+  const showTodayDot = overview !== null && !trainingStarted && !overview.today.restDay
 
   async function runFeature(feature: WorkbenchFeature): Promise<void> {
     if (!sessionId) {
@@ -142,7 +142,7 @@ export function WorkbenchPanel({
         </div>
         <div>
           <h2>Algorithm Practice Space</h2>
-          <p>训练工作台 · v0.2.1</p>
+          <p>训练工作台 · v0.2.2</p>
         </div>
       </header>
 

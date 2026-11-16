@@ -9,6 +9,8 @@ export interface DayCell {
   trainingTotal: number
   trainingDone: number
   done: boolean
+  /** 周日休息日 */
+  restDay: boolean
 }
 
 export interface Overview {
@@ -24,6 +26,8 @@ export interface Overview {
       remaining: Array<{ problemKey: string; url: string | null }>
     }
     done: boolean
+    /** 周日休息日：默认已完成，可自由加训 */
+    restDay: boolean
     advice: { kind: 'catchup' | 'extra'; title: string; items: string[] }
   }
   streak: { current: number; longest: number; totalDays: number }
@@ -57,8 +61,10 @@ function levelOf(cell: DayCell): 0 | 1 | 2 | 3 {
 
 function monthCheckin(data: Overview): { checked: number; days: number } {
   const month = data.today.date.slice(0, 7)
-  const checked = data.days.filter((d) => d.date.startsWith(month) && d.ac > 0).length
-  const days = Number(data.today.date.slice(8, 10))
+  const cells = data.days.filter((d) => d.date.startsWith(month) && d.date <= data.today.date)
+  // 周日休息日：不计入本月打卡的分子和分母；只统计今天及以前
+  const checked = cells.filter((d) => !d.restDay && d.ac > 0).length
+  const days = cells.filter((d) => !d.restDay).length
   return { checked, days }
 }
 
@@ -176,22 +182,27 @@ function ContestsView({ data }: { data: ContestItem[] | null }): ReactNode {
 function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraining?: () => void }): ReactNode {
   const t = data.today
   const month = monthCheckin(data)
+  // 服务端已按周对齐并去掉周日；每列固定 6 个格子（周一到周六）
+  const visibleDays = data.days.filter((cell) => !cell.restDay)
   const weeks: DayCell[][] = []
-  for (let i = 0; i < data.days.length; i += 7) weeks.push(data.days.slice(i, i + 7))
+  for (let i = 0; i < visibleDays.length; i += 6) weeks.push(visibleDays.slice(i, i + 6))
   return (
     <>
       <div className="icpc-viz__head">
         <div>
           <div className="icpc-viz__state">
-            {t.done
-              ? '今日训练已完成'
-              : t.training.total === 0
-                ? '今日未开始'
-                : '今日训练未完成'}
+            {t.restDay
+              ? '周日休息日'
+              : t.done
+                ? '今日训练已完成'
+                : t.training.total === 0
+                  ? '今日未开始'
+                  : '今日训练未完成'}
           </div>
           <div className="icpc-viz__meta">
-            训练 {t.training.completed}/{t.training.total}
-            {' · '}今日累计 AC {t.ac} 题
+            {t.restDay
+              ? `今日累计 AC ${t.ac} 题 · 可自由加训`
+              : <>训练 {t.training.completed}/{t.training.total}{' · '}今日累计 AC {t.ac} 题</>}
           </div>
         </div>
         <div className="icpc-viz__streak">
@@ -225,13 +236,13 @@ function CalendarView({ data, onExtraTraining }: { data: Overview; onExtraTraini
       <div className="icpc-viz__grid" title="最近 12 周：颜色越深 = 当天 AC 越多或计划已完成">
         {weeks.map((week, wi) => (
           <div className="icpc-viz__week" key={wi}>
-            {week.map((cell) => (
-              <div
-                key={cell.date}
-                className={`icpc-viz__cell icpc-viz__cell--${levelOf(cell)}`}
-                title={`${cell.date} · AC ${cell.ac} · 提交 ${cell.submissions}${cell.trainingTotal > 0 ? ` · 训练 ${cell.trainingDone}/${cell.trainingTotal}` : ''}`}
-              />
-            ))}
+            {week.map((cell) => {
+              const level = cell.restDay ? 'rest' : String(levelOf(cell))
+              const title = cell.restDay
+                ? `${cell.date} · 周日休息${cell.ac > 0 ? ` · 加训 AC ${cell.ac}` : ''}`
+                : `${cell.date} · AC ${cell.ac} · 提交 ${cell.submissions}${cell.trainingTotal > 0 ? ` · 训练 ${cell.trainingDone}/${cell.trainingTotal}` : ''}`
+              return <div key={cell.date} className={`icpc-viz__cell icpc-viz__cell--${level}`} title={title} />
+            })}
           </div>
         ))}
       </div>
@@ -381,12 +392,13 @@ const CSS = `
 .icpc-viz__left span { opacity: 0.6; }
 .icpc-viz__sep { width: 1px; height: 12px; background: var(--dsw-alias-border-l4); align-self: center; margin: 0 2px; }
 .icpc-viz__grid { display: flex; gap: 3px; margin-top: 12px; overflow-x: auto; }
-.icpc-viz__week { display: grid; grid-template-rows: repeat(7, 10px); gap: 3px; }
+.icpc-viz__week { display: grid; grid-template-rows: repeat(6, 10px); gap: 3px; }
 .icpc-viz__cell { width: 10px; height: 10px; border-radius: 2px; background: var(--dsw-alias-interactive-bg-hover); }
 .icpc-viz__cell--0 { background: var(--dsw-alias-interactive-bg-hover); }
 .icpc-viz__cell--1 { background: #bbf7d0; }
 .icpc-viz__cell--2 { background: #4ade80; }
 .icpc-viz__cell--3 { background: #15803d; }
+.icpc-viz__cell--rest { background: transparent; }
 .icpc-viz__legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 10px; color: var(--dsw-alias-label-caption); }
 .icpc-viz__swatch { width: 10px; height: 10px; border-radius: 2px; }
 .icpc-viz__total { margin-left: auto; }

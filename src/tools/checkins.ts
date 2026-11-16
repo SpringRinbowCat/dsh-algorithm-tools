@@ -8,8 +8,8 @@ export function registerCheckinTool(host: IcpcHost, ctx: Context): () => void {
   return ctx.tools.register(defineTool({
     name: 'icpc_checkin',
     description:
-      '今日训练完成度与日历打卡。action=status 今天是否完成（含补题/加训建议）；' +
-      'action=streak 连续打卡（以「当天有 AC」为准）；action=month 月视图；action=date 某天摘要。',
+      '今日训练完成度与日历打卡。action=status 今天是否完成（周日默认完成，可加训）；' +
+      'action=streak 连续打卡（以「当天有 AC」为准，跳过周日）；action=month 月视图（跳过周日）；action=date 某天摘要。',
     parameters: {
       action: {
         type: 'string', required: true,

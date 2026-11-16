@@ -7,7 +7,7 @@ import type { Context } from '../dsh-compat.ts'
 import { defineTool } from '../dsh-compat.ts'
 import { textOutput, ANY_OUTPUT, num } from './helpers.ts'
 import { computeWeakness } from '../analysis/weakness.ts'
-import { localDay } from '../util/local-date.ts'
+import { localDay, isSunday } from '../util/local-date.ts'
 import { gitCommitPush, gitPullForceRemote } from '../util/git.ts'
 import { syncPlatform } from './sync-helpers.ts'
 import { contestIdOf, replayTagScores, type ContestMeta } from '../analysis/replay.ts'
@@ -132,6 +132,7 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
     description:
       '获取今日三档训练推荐。能力值直接使用 Codeforces 当前 rating（四舍五入到 100），' +
       '按巩固区/同段区/挑战区推荐题目，弱项标签与比赛复盘命中优先。' +
+      '周日默认休息、不提供每日训练；extra=true 时才生成加练题。' +
       '会先 git pull 再读当天目录：已经有 .md 或题目就按已有安排锁定，避免多设备各抽一套；缺失时才生成并写入同名 .md。',
     parameters: {
       consolidation: { type: 'number', description: '巩固区题量（默认 2）' },
@@ -139,11 +140,32 @@ export function registerTodayTool(host: IcpcHost, ctx: Context): () => void {
       challenge: { type: 'number', description: '挑战区题量（默认 1）' },
       rotate: { type: 'number', description: '换一批偏移量（仅未锁定时有效）' },
       windowDays: { type: 'number', description: '能力值窗口天数（默认 60）' },
+      extra: { type: 'boolean', description: '周日加训：设为 true 时跳过休息日，强制生成加练题' },
     },
     output: { schema: ANY_OUTPUT, render: (_a, v) => textOutput(v) },
     async execute(args) {
       const { store } = host
       const todayStr = localDay()
+      if (isSunday(todayStr) && args.extra !== true) {
+        return {
+          ok: true,
+          data: {
+            date: todayStr,
+            level: null,
+            refreshedFromCf: null,
+            sources: null,
+            locked: true,
+            scheduledBy: 'rest',
+            gitSync: null,
+            mdPath: null,
+            bands: [],
+            bandReasons: [],
+            focus: null,
+            restDay: true,
+            message: '周日休息日：今天不提供每日训练；可以自由休息，或点「加训」额外练题。',
+          },
+        }
+      }
       const windowDays = num(args.windowDays, 60, 7, 365)
       const sinceMs = Date.now() - windowDays * 86_400_000
       const since = new Date(sinceMs).toISOString()
