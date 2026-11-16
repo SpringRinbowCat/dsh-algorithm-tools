@@ -162,9 +162,13 @@ export function estimateLevelDetail(
   }
 }
 
-/** 直接按当前 rating 取能力值，四舍五入到 100 后用于三档划分 */
+/** 训练下限：rating 低于此值时按此值训练（避免新号/掉分后只出 600 档题） */
+export const MIN_TRAINING_LEVEL = 1200
+
+/** 直接按当前 rating 取能力值，四舍五入到 100 后用于三档划分；低于 1200 时锁到 1200 */
 export function estimateLevelFromRating(rating: number): LevelEstimate {
-  const level = Math.round(rating / 100) * 100
+  const rounded = Math.round(rating / 100) * 100
+  const level = Math.max(MIN_TRAINING_LEVEL, rounded)
   return {
     level,
     rating,
@@ -227,8 +231,17 @@ export function renderTodayMarkdown(input: TodayMdInput): string {
   parts.push('')
 
   if (level.rating != null) {
-    parts.push(`- **能力值**：${level.level}（当前 rating ${level.rating}）`)
-    parts.push(`- **口径**：直接使用 Codeforces 当前 rating，四舍五入到 100 后划分三档`)
+    const clamped = level.level > Math.round(level.rating / 100) * 100
+    parts.push(
+      clamped
+        ? `- **能力值**：${level.level}（当前 rating ${level.rating}，低于 ${MIN_TRAINING_LEVEL} 按 ${MIN_TRAINING_LEVEL} 训练）`
+        : `- **能力值**：${level.level}（当前 rating ${level.rating}）`,
+    )
+    parts.push(
+      clamped
+        ? `- **口径**：rating 低于 ${MIN_TRAINING_LEVEL} 时锁定 ${MIN_TRAINING_LEVEL}；高于时直接用 rating 四舍五入到 100`
+        : `- **口径**：直接使用 Codeforces 当前 rating，四舍五入到 100 后划分三档`,
+    )
   } else {
     const sources = [
       level.practiceLevel != null ? `刷题 ${level.practiceLevel}` : '刷题 数据不足',

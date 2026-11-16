@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   bandForDifficulty,
   estimateLevelDetail,
+  estimateLevelFromRating,
   renderTodayMarkdown,
 } from '../src/analysis/today.ts'
 
@@ -75,5 +76,19 @@ describe('renderTodayMarkdown', () => {
     assert.ok(md.includes('本地已锁定'))
     assert.ok(md.includes('命中弱项 math'))
     assert.ok(md.includes('[2020A](https://codeforces.com/problemset/problem/2020/A)'))
+  })
+})
+
+describe('rating 下限锁定', () => {
+  it('低于 1200 锁到 1200', () => {
+    assert.equal(estimateLevelFromRating(571).level, 1200)
+    assert.equal(estimateLevelFromRating(1100).level, 1200)
+    assert.equal(estimateLevelFromRating(1199).level, 1200)
+  })
+
+  it('1200 及以上用真实 rating', () => {
+    assert.equal(estimateLevelFromRating(1200).level, 1200)
+    assert.equal(estimateLevelFromRating(1306).level, 1300)
+    assert.equal(estimateLevelFromRating(1480).level, 1500)
   })
 })
