@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { AgentLike, Context } from './dsh-compat.ts'
+import { hostRejection } from './dsh-compat.ts'
 import type { IcpcHost } from './index.ts'
 import { registerSyncTool } from './tools/sync.ts'
 import { registerSyncAllTool } from './tools/sync-all.ts'
@@ -130,6 +131,11 @@ export function registerActivationRoute(ctx: Context, host: IcpcHost): void {
       kind: 'exact',
       path: '/algorithm-tools/activate',
       async handler(req, res) {
+        const admission = hostRejection(ctx, req)
+        if (admission) {
+          sendJson(res, admission, { ok: false, error: 'not-admitted' })
+          return
+        }
         if (req.method !== 'POST') {
           res.setHeader('allow', 'POST')
           sendJson(res, 405, { ok: false, error: 'method-not-allowed' })

@@ -4,6 +4,7 @@
  */
 
 import type { IcpcHost } from './index.ts'
+import { hostRejection } from './dsh-compat.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 export interface ContestItem {
@@ -67,6 +68,11 @@ export function registerContestsRoute(
       kind: 'exact',
       path: '/algorithm-tools/contests',
       async handler(req: IncomingMessage, res: ServerResponse) {
+        const admission = hostRejection(ctx, req)
+        if (admission) {
+          sendJson(res, admission, { ok: false, error: 'not-admitted' })
+          return
+        }
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')
           sendJson(res, 405, { ok: false, error: 'method-not-allowed' })

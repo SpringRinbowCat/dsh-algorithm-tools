@@ -162,6 +162,8 @@ export interface Context {
   tools: ToolsService
   agents?: AgentsService
   webServer?: WebServerService
+  /** 取 Host 服务（如 connection：DSH 自己的 Host/Origin + 登录准入） */
+  get?: (name: string) => unknown
   fs?: FsService
   rpc?: RpcService
   effect: (fn: () => void | (() => void)) => void
@@ -170,6 +172,19 @@ export interface Context {
 }
 
 // ---------- 插件配置 ----------
+
+/**
+ * DSH Host 的请求准入（Host/Origin 栅栏 + 浏览器登录）。
+ * 用 webServer.register 挂的精确路由不经过 Host 的中间件，必须自己问。
+ * 返回非 0 表示应直接以此状态码拒绝。
+ */
+export function hostRejection(ctx: { get?: (name: string) => unknown }, req: unknown): number | undefined {
+  const connection = ctx.get?.('connection') as
+    | { requestRejection?: (request: unknown) => number | undefined }
+    | undefined
+  const gate = connection?.requestRejection
+  return typeof gate === 'function' ? gate.call(connection, req) : undefined
+}
 
 export interface PluginConfig {
   /** 数据目录路径（存 JSON 状态文件）；留空则用 workspace 下 .icpc-data/ */

@@ -6,6 +6,7 @@
  */
 
 import type { IcpcHost } from './index.ts'
+import { hostRejection } from './dsh-compat.ts'
 import type { PlatformId } from './types.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { syncPlatform, syncBank } from './tools/sync-helpers.ts'
@@ -102,6 +103,11 @@ export function registerSyncRoute(
       kind: 'exact',
       path: '/algorithm-tools/sync',
       async handler(req: IncomingMessage, res: ServerResponse) {
+        const admission = hostRejection(ctx, req)
+        if (admission) {
+          sendJson(res, admission, { ok: false, error: 'not-admitted' })
+          return
+        }
         if (req.method !== 'POST') {
           res.setHeader('allow', 'POST')
           sendJson(res, 405, { ok: false, error: 'method-not-allowed' })

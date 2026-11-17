@@ -4,6 +4,7 @@
  */
 
 import type { IcpcStore } from './store/index.ts'
+import { hostRejection } from './dsh-compat.ts'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { computeOverall } from './analysis/stats.ts'
 import { computeWeakness } from './analysis/weakness.ts'
@@ -273,6 +274,11 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
       kind: 'exact',
       path: '/algorithm-tools/overview',
       handler: async (req: IncomingMessage, res: ServerResponse) => {
+        const admission = hostRejection(ctx, req)
+        if (admission) {
+          sendJson(res, admission, { ok: false, error: 'not-admitted' })
+          return
+        }
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')
           sendJson(res, 405, { ok: false, error: 'method-not-allowed' })
@@ -303,6 +309,11 @@ export function registerOverviewRoute(ctx: { webServer?: { register: (r: unknown
       kind: 'exact',
       path: '/algorithm-tools/stats',
       handler: async (req: IncomingMessage, res: ServerResponse) => {
+        const admission = hostRejection(ctx, req)
+        if (admission) {
+          sendJson(res, admission, { ok: false, error: 'not-admitted' })
+          return
+        }
         if (req.method !== 'GET') {
           res.setHeader('allow', 'GET')
           sendJson(res, 405, { ok: false, error: 'method-not-allowed' })
