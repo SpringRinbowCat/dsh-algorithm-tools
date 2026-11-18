@@ -142,7 +142,7 @@ export function WorkbenchPanel({
         </div>
         <div>
           <h2>Algorithm Practice Space</h2>
-          <p>训练工作台 · v0.2.2</p>
+          <p>训练工作台 · v0.2.3</p>
         </div>
       </header>
 
