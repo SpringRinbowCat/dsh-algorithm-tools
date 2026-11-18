@@ -2,6 +2,10 @@
 
 算法训练台 — [DeepSeek Harness](https://github.com/deepseek-ai) 插件。
 
+> **来源**：本插件基于 [ZF3373/icpc-workbench](https://github.com/ZF3373/icpc-workbench)（GPL-3.0）裁剪重写，只保留了其中一部分功能；完整说明见 [NOTICE.md](NOTICE.md)。
+>
+> **许可**：GPL-3.0。
+
 把 Codeforces / AtCoder 的刷题数据接进 DSH：同步提交、弱项分析、每日三档训练、Rank 复盘、赛事列表、日历打卡。能力分两层：
 
 - **10 个 `icpc_*` agent 工具** — 在对话里直接让 AI 帮你同步、选题、复盘
@@ -316,3 +320,14 @@ pnpm test
 ```
 
 40 个用例，覆盖：纯函数分析（难度分档、弱项打分、趋势、Markdown 渲染）、rating 训练下限、工具按会话注册、客户端功能目录、better-sidebar 描述符、换号后的数据隔离、旧字段清理。
+
+## 来源与许可
+
+本插件基于 [ZF3373/icpc-workbench](https://github.com/ZF3373/icpc-workbench)（GPL-3.0）修改而来：
+
+- **沿用的部分**：统计引擎、弱项画像、趋势分析、标签净化、Codeforces / AtCoder 同步适配器
+- **移除的部分**：SQLite 数据库、模板库、复习库、掌握度地图、AI 训练计划、其余平台适配器
+- **新增的部分**：DeepSeek Harness 插件形态、三档训练、Rank 复盘、训练仓库集成、换号隔离
+
+由于上游是 GPL-3.0，本仓库同样以 **GPL-3.0** 发布（见 [LICENSE](LICENSE)）。详细对照见 [NOTICE.md](NOTICE.md)。
+

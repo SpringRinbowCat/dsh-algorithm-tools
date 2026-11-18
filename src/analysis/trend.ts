@@ -1,4 +1,4 @@
-/** 趋势分析（移植自原 icpc-workbench，纯函数） */
+/** 趋势分析（移植自 icpc-workbench https://github.com/ZF3373/icpc-workbench，GPL-3.0；纯函数） */
 
 import type { SubmissionRow } from '../store/index.ts'
 import { bucketForDifficulty } from './stats.ts'

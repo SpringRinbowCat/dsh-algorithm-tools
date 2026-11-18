@@ -1,5 +1,5 @@
 /**
- * 统计引擎（移植自原 icpc-workbench，去掉 DB 依赖）。
+ * 统计引擎（移植自 icpc-workbench https://github.com/ZF3373/icpc-workbench，GPL-3.0；去掉 DB 依赖）。
  * 输入为 SubmissionRow[]（store.getSubmissionRows 输出），纯函数运算。
  */
 

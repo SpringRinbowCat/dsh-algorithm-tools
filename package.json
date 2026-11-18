@@ -1,7 +1,7 @@
 {
   "name": "dsh-algorithm-tools",
   "version": "0.2.2",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "type": "module",
   "description": "算法训练台（DeepSeek Harness 插件）：Codeforces/AtCoder 刷题同步、弱项分析、每日三档训练、Rank 复盘、赛事与打卡",
   "repository": {

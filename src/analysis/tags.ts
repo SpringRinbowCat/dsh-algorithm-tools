@@ -1,4 +1,4 @@
-/** 标签净化：过滤非算法能力维度的噪声标签（移植自原 icpc-workbench） */
+/** 标签净化：过滤非算法能力维度的噪声标签（移植自 icpc-workbench https://github.com/ZF3373/icpc-workbench，GPL-3.0） */
 
 const CF_NOISE_PREFIX = '*'
 

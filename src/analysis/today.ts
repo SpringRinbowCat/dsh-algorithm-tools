@@ -1,4 +1,4 @@
-/** 今日训练选题（移植自原 icpc-workbench，纯函数） */
+/** 今日训练选题（移植自 icpc-workbench https://github.com/ZF3373/icpc-workbench，GPL-3.0；纯函数） */
 
 import type { TodayBandKey, TodayProblem } from '../types.ts'
 

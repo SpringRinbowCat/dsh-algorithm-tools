@@ -2,7 +2,7 @@
  * AtCoder 适配器：kenkoooo.com 公开 API（无需登录）。
  * - user/submissions: 提交记录（from_second 增量）
  * - resources/problems.json + problem-models.json: 题目标题与难度
- * 移植自原 icpc-workbench，去掉 node:fs 磁盘缓存，改用内存 Map 缓存。
+ * 移植自 icpc-workbench https://github.com/ZF3373/icpc-workbench（GPL-3.0），去掉 node:fs 磁盘缓存，改用内存 Map 缓存。
  */
 
 import type { NormalizedSubmission, PlatformId, Verdict } from '../types.ts'

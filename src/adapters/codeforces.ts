@@ -2,7 +2,7 @@
  * Codeforces 适配器：官方公开 API（无需登录）。
  * - user.status: 提交记录（支持 knownExternalIds 增量终止）
  * - contest.list: 赛事列表
- * 移植自原 icpc-workbench，去掉 node:fs 依赖，纯 fetch。
+ * 移植自 icpc-workbench https://github.com/ZF3373/icpc-workbench（GPL-3.0），去掉 node:fs 依赖，纯 fetch。
  */
 
 import type { NormalizedSubmission, PlatformId, Verdict } from '../types.ts'
